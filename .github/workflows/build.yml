@@ -1,0 +1,52 @@
+name: Build desktop applications
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-latest
+            target: x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Unit and translation tests
+        run: cargo test --locked --lib --bins
+      - name: Real-save integration tests (optional local fixture)
+        if: ${{ hashFiles('saveExample/sav.dat') != '' }}
+        run: cargo test --locked --test real_save
+      - run: cargo build --release --locked --target ${{ matrix.target }}
+      - run: python scripts/collect_licenses.py
+      - name: Package macOS app
+        if: runner.os == 'macOS'
+        run: |
+          python3 scripts/package_macos.py --binary target/${{ matrix.target }}/release/nightcity-save-editor
+          ditto -c -k --sequesterRsrc --keepParent "dist/macos/Night City Save Editor.app" "dist/NightCity-${{ matrix.target }}.zip"
+      - name: Package Windows app
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/windows
+          Copy-Item target/${{ matrix.target }}/release/nightcity-save-editor.exe dist/windows/
+          Copy-Item README.md,LICENSE,THIRD_PARTY_NOTICES.md dist/windows/
+          Copy-Item assets/CyberCAT-LICENSE dist/windows/
+          Copy-Item dist/THIRD_PARTY_LICENSES.txt dist/windows/
+          Compress-Archive -Path dist/windows/* -DestinationPath dist/NightCity-${{ matrix.target }}.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NightCity-${{ matrix.target }}
+          path: dist/*.zip

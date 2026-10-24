@@ -1,0 +1,8 @@
+/target/
+/dist/
+.DS_Store
+*.bak
+
+# Local game saves are private test fixtures.
+/saveExample/
+__pycache__/

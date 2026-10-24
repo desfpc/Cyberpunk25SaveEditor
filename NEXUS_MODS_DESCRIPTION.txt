@@ -1,0 +1,64 @@
+РУССКИЙ
+
+Night City Save Editor — Cyberpunk 2077 2.5
+
+Нативный редактор сохранений на Rust с тёмным интерфейсом и переключением Русский / English. Доступны версии для Windows x64 и macOS (Apple Silicon / Intel).
+
+Возможности:
+- Изменение атрибутов, уровня, репутации, навыков и очков развития V.
+- Редактирование денег, количества предметов и квестовых флагов предметов.
+- Добавление денег, компонентов и боеприпасов.
+- Настройка доступного для вызова транспорта.
+- Поиск, изменение и добавление квестовых флагов, JSON-экспорт.
+- Расширенное редактирование записей внешности по внутренним именам игры.
+- Отмена и повтор изменений, экспорт отдельной копии с проверкой структуры. Оригинал остаётся неизменным.
+
+Это первая рабочая версия для формата 2.5 (saveVersion 277 / gameVersion 2500). Проверена на примере macOS 2.5 / Phantom Liberty; загрузка изменённого сохранения в самой игре и запуск Windows-сборки пока не проверены. Добавление произвольного уникального снаряжения и 3D-просмотр внешности не включены.
+
+Как использовать: закройте игру, откройте sav.dat, внесите изменения и нажмите «Экспорт копии». Поместите новую папку ManualSave рядом с остальными сохранениями и загрузите её в игре.
+
+Разработал Sergei Peshalov.
+GitHub проекта: https://github.com/desfpc/Cyberpunk25SaveEditor
+GitHub разработчика: https://github.com/desfpc
+
+CyberCAT-SimpleGUI · исходный ориентир
+https://github.com/Deweh/CyberCAT-SimpleGUI
+
+WolvenKit · исследование формата
+https://github.com/WolvenKit/WolvenKit
+
+GPL-3.0-only. Словари CyberCAT используются по MIT.
+Неофициальный проект, не связанный с CD PROJEKT.
+
+
+ENGLISH
+
+Night City Save Editor — Cyberpunk 2077 2.5
+
+A native Rust save editor with a dark interface and instant Russian / English switching. Available for Windows x64 and macOS (Apple Silicon / Intel).
+
+Features:
+- Edit V's attributes, level, Street Cred, skills and development points.
+- Change money, item quantities and item quest flags.
+- Add money, crafting components and ammunition.
+- Manage vehicles available in the vehicle call list.
+- Search, edit and add quest facts; export facts as JSON.
+- Advanced appearance editing using internal game names.
+- Undo/redo and export to a separate copy with structural verification. The original save stays unchanged.
+
+This is an initial working version for the 2.5 format (saveVersion 277 / gameVersion 2500). Checked against a macOS 2.5 / Phantom Liberty example; loading an edited save in the game and running the Windows build have not yet been verified. Adding arbitrary unique equipment and a 3D appearance preview are not included.
+
+How to use: close the game, open sav.dat, make your changes and select Export copy. Place the new ManualSave folder alongside your other saves and load it in the game.
+
+Developed by Sergei Peshalov.
+Project GitHub: https://github.com/desfpc/Cyberpunk25SaveEditor
+Developer GitHub: https://github.com/desfpc
+
+CyberCAT-SimpleGUI · reference project
+https://github.com/Deweh/CyberCAT-SimpleGUI
+
+WolvenKit · save format research
+https://github.com/WolvenKit/WolvenKit
+
+GPL-3.0-only. CyberCAT dictionaries are used under the MIT license.
+An unofficial project, not affiliated with CD PROJEKT.
