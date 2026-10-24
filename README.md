@@ -12,10 +12,17 @@
 
 ### Запуск
 
-Готовые локальные пакеты находятся в `dist/`:
+Готовая версия **0.1.1** — установка Rust и сборка не нужны:
 
-- macOS: `NightCity-macOS-universal.zip` — приложение `.app` для Apple Silicon и Intel.
-- Windows x64: `NightCity-Windows-x64.zip` — `nightcity-save-editor.exe`.
+| Платформа | Скачать | Содержимое |
+| --- | --- | --- |
+| Windows x64 | [NightCity-Windows-x64.zip](https://github.com/desfpc/Cyberpunk25SaveEditor/raw/refs/heads/main/downloads/NightCity-Windows-x64.zip) | `nightcity-save-editor.exe` |
+| macOS Apple Silicon / Intel | [NightCity-macOS-universal.zip](https://github.com/desfpc/Cyberpunk25SaveEditor/raw/refs/heads/main/downloads/NightCity-macOS-universal.zip) | Универсальное приложение `.app` |
+
+Скачайте ZIP для своей платформы, распакуйте и запустите приложение.
+Пакеты хранятся прямо в папке [`downloads/`](downloads/), контрольные суммы —
+в [`downloads/SHA256SUMS.txt`](downloads/SHA256SUMS.txt).
+При локальной сборке пакеты создаются в `dist/`.
 
 Язык интерфейса переключается в верхней панели: **Русский / English**.
 Перевод применяется сразу, включая сообщения о последних действиях; загруженное
@@ -148,10 +155,17 @@ Project repository: [desfpc/Cyberpunk25SaveEditor](https://github.com/desfpc/Cyb
 
 ### Getting started
 
-Local application packages are generated in `dist/`:
+Download version **0.1.1** — no Rust installation or build step required:
 
-- macOS: `NightCity-macOS-universal.zip` — an `.app` for Apple Silicon and Intel.
-- Windows x64: `NightCity-Windows-x64.zip` — `nightcity-save-editor.exe`.
+| Platform | Download | Contents |
+| --- | --- | --- |
+| Windows x64 | [NightCity-Windows-x64.zip](https://github.com/desfpc/Cyberpunk25SaveEditor/raw/refs/heads/main/downloads/NightCity-Windows-x64.zip) | `nightcity-save-editor.exe` |
+| macOS Apple Silicon / Intel | [NightCity-macOS-universal.zip](https://github.com/desfpc/Cyberpunk25SaveEditor/raw/refs/heads/main/downloads/NightCity-macOS-universal.zip) | Universal `.app` |
+
+Download the ZIP for your platform, extract it and launch the application.
+Packages are stored directly in [`downloads/`](downloads/). Checksums are in
+[`downloads/SHA256SUMS.txt`](downloads/SHA256SUMS.txt).
+Local packaging commands generate their output in `dist/`.
 
 Switch the interface language in the top bar: **Русский / English**.
 Translations apply immediately, including the latest status message. The loaded
