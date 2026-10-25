@@ -242,3 +242,140 @@ fn item_catalog_resolves_example() {
         .count();
     assert!(known > 380, "only {known} item names resolved");
 }
+
+#[test]
+fn voice_type_changes_only_its_flag_and_metadata() {
+    use nightcity_save_editor::appearance::Gender;
+    let mut s = sample();
+    let types = s.appearance_types().unwrap();
+    assert_eq!(types.body, Gender::Female);
+    assert_eq!(types.voice, Gender::Female);
+    let mut expected = s.data.clone();
+    let offset = s.node("CharacetrCustomization_Appearances").unwrap().offset + 14;
+    expected[offset] = 1;
+    s.set_voice_type(Gender::Male).unwrap();
+    assert!(s.data == expected);
+    assert_eq!(
+        s.metadata.as_ref().unwrap()["Data"]["metadata"]["brainGender"],
+        "Male"
+    );
+    let r = Save::parse(s.encode().unwrap()).unwrap();
+    assert_eq!(r.appearance_types().unwrap().voice, Gender::Male);
+    assert_eq!(r.appearance_types().unwrap().body, Gender::Female);
+    s.set_voice_type(Gender::Female).unwrap();
+    assert!(s.data == sample().data);
+}
+
+#[test]
+fn body_type_roundtrips_both_presets_and_preserves_voice() {
+    use nightcity_save_editor::{
+        appearance::{AppearanceTypes, Gender},
+        binary::Reader,
+        save::fnv64,
+    };
+    fn persistent_entries(s: &Save) -> Vec<(u64, u64, Vec<u8>)> {
+        let n = s.node("PersistencySystem2").unwrap();
+        let mut r = Reader::new(&s.data, n.offset + 4);
+        let count = r.u32().unwrap();
+        r.bytes(count as usize * 4 + 4).unwrap();
+        let count = r.u32().unwrap();
+        let mut rows = Vec::new();
+        for _ in 0..count {
+            let id = r.u64().unwrap();
+            if id == 0 {
+                rows.push((id, 0, vec![]));
+                continue;
+            }
+            let kind = r.u64().unwrap();
+            let len = r.u32().unwrap();
+            rows.push((id, kind, r.bytes(len as usize).unwrap().to_vec()));
+        }
+        rows
+    }
+    for voice in [Gender::Male, Gender::Female] {
+        let mut s = sample();
+        s.set_voice_type(voice).unwrap();
+        let untouched: Vec<_> = persistent_entries(&s)
+            .into_iter()
+            .filter(|(_, kind, _)| *kind != fnv64("PlayerPuppetPS"))
+            .collect();
+        let original_nodes: Vec<_> = s
+            .nodes
+            .iter()
+            .filter(|n| {
+                n.child == u32::MAX
+                    && !["PersistencySystem2", "CharacetrCustomization_Appearances"]
+                        .contains(&n.name.as_str())
+            })
+            .map(|n| (n.name.clone(), s.data[n.offset..n.offset + n.size].to_vec()))
+            .collect();
+        let original_header = s.node("CharacetrCustomization_Appearances").unwrap().offset + 4;
+        let header = s.data[original_header..original_header + 9].to_vec();
+        for body in [Gender::Male, Gender::Female] {
+            s.set_body_type(body).unwrap();
+            assert_eq!(
+                s.appearance_types().unwrap(),
+                AppearanceTypes { body, voice }
+            );
+            assert!(!s.appearances().unwrap().is_empty());
+            let current_header = s.node("CharacetrCustomization_Appearances").unwrap().offset + 4;
+            assert_eq!(&s.data[current_header..current_header + 9], header);
+            assert_eq!(
+                s.metadata.as_ref().unwrap()["Data"]["metadata"]["bodyGender"],
+                body.name()
+            );
+            let rows = persistent_entries(&s);
+            let player = &rows
+                .iter()
+                .find(|(_, kind, _)| *kind == fnv64("PlayerPuppetPS"))
+                .unwrap()
+                .2;
+            let mut signature = fnv64("gender").to_le_bytes().to_vec();
+            signature.extend(fnv64("CName").to_le_bytes());
+            signature.extend(fnv64(body.name()).to_le_bytes());
+            assert_eq!(player.windows(24).filter(|w| *w == signature).count(), 1);
+            assert!(
+                rows.into_iter()
+                    .filter(|(_, kind, _)| *kind != fnv64("PlayerPuppetPS"))
+                    .collect::<Vec<_>>()
+                    == untouched
+            );
+            let r = Save::parse(s.encode().unwrap()).unwrap();
+            assert_eq!(
+                r.appearance_types().unwrap(),
+                AppearanceTypes { body, voice }
+            );
+            let after: Vec<_> = r
+                .nodes
+                .iter()
+                .filter(|n| {
+                    n.child == u32::MAX
+                        && !["PersistencySystem2", "CharacetrCustomization_Appearances"]
+                            .contains(&n.name.as_str())
+                })
+                .map(|n| (n.name.clone(), r.data[n.offset..n.offset + n.size].to_vec()))
+                .collect();
+            assert!(original_nodes == after);
+        }
+    }
+}
+
+#[test]
+fn body_change_fails_atomically_when_player_persistency_is_missing() {
+    use nightcity_save_editor::{appearance::Gender, save::fnv64};
+    let mut s = sample();
+    let hash = fnv64("PlayerPuppetPS").to_le_bytes();
+    let n = s.node("PersistencySystem2").unwrap();
+    let offsets: Vec<_> = s.data[n.offset..n.offset + n.size]
+        .windows(8)
+        .enumerate()
+        .filter_map(|(i, b)| (b == hash).then_some(n.offset + i))
+        .collect();
+    assert_eq!(offsets.len(), 1);
+    s.data[offsets[0]..offsets[0] + 8].fill(0);
+    let before = s.data.clone();
+    let metadata = s.metadata.clone();
+    assert!(s.set_body_type(Gender::Male).is_err());
+    assert!(s.data == before);
+    assert_eq!(s.metadata, metadata);
+}

@@ -10,6 +10,7 @@ Night City Save Editor — Cyberpunk 2077 2.5
 - Добавление денег, компонентов и боеприпасов.
 - Настройка доступного для вызова транспорта.
 - Поиск, изменение и добавление квестовых флагов, JSON-экспорт.
+- Выбор мужского/женского тела и голоса; смена тела сбрасывает внешность к базовому пресету.
 - Расширенное редактирование записей внешности по внутренним именам игры.
 - Отмена и повтор изменений, экспорт отдельной копии с проверкой структуры. Оригинал остаётся неизменным.
 
@@ -43,6 +44,7 @@ Features:
 - Add money, crafting components and ammunition.
 - Manage vehicles available in the vehicle call list.
 - Search, edit and add quest facts; export facts as JSON.
+- Select male/female body and voice; changing body type resets appearance to its default preset.
 - Advanced appearance editing using internal game names.
 - Undo/redo and export to a separate copy with structural verification. The original save stays unchanged.
 

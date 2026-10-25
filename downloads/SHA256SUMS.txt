@@ -1,2 +1,2 @@
-b0875ddca06e1e240b636e802843775dafbc3aca91d599e3179eb50325c65063  NightCity-Windows-x64.zip
-8369502c230e58ee2cbe4da4121725bef5d290a297d4b9fc30586af6c9582db7  NightCity-macOS-universal.zip
+4cd7faa8dc99e0e0ddf1ce8d06c3d372b0c07041feae7bca7e0018b1a12b7c52  NightCity-Windows-x64.zip
+ea7d247a1e87b1311eaa94990e2b7ff701e5892b665e3a6ccfbdab4ac8435584  NightCity-macOS-universal.zip

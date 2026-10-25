@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use eframe::egui::{self, Color32, RichText};
 use i18n::Language;
 use nightcity_save_editor::{
+    appearance::Gender,
     binary::{put32, u32_at},
     package::PlayerStat,
     save::{fact_hash, tdb, Appearance, Fact, Item, Save, Vehicle, STACK_RECORDS},
@@ -713,6 +714,40 @@ impl App {
     }
     fn appearance(&mut self, ui: &mut egui::Ui) {
         let lang = self.language;
+        if let Some(save) = &self.save {
+            match save.appearance_types() {
+                Ok(types) => {
+                    let mut body = types.body;
+                    let mut voice = types.voice;
+                    ui.horizontal_wrapped(|ui| {
+                        ui.label(lang.text("Тип тела"));
+                        ui.selectable_value(&mut body, Gender::Male, lang.text("Мужское"));
+                        ui.selectable_value(&mut body, Gender::Female, lang.text("Женское"));
+                        ui.add_space(20.);
+                        ui.label(lang.text("Тип голоса"));
+                        ui.selectable_value(&mut voice, Gender::Male, lang.text("Мужской"));
+                        ui.selectable_value(&mut voice, Gender::Female, lang.text("Женский"));
+                    });
+                    ui.label(RichText::new(lang.text("Смена тела сбрасывает настройки внешности к базовому пресету выбранного типа. Голос выбирается независимо. Изменения можно отменить.")).small().color(MUTED));
+                    if body != types.body {
+                        self.edit(
+                            lang.text("Тип тела изменён; внешность сброшена к базовому пресету"),
+                            |s| s.set_body_type(body),
+                        );
+                        self.appearance_index = None;
+                        self.appearance_value.clear();
+                    } else if voice != types.voice {
+                        self.edit(lang.text("Тип голоса изменён"), |s| {
+                            s.set_voice_type(voice)
+                        });
+                    }
+                }
+                Err(e) => {
+                    ui.colored_label(YELLOW, format!("{}: {e:#}", lang.text("Тип тела")));
+                }
+            }
+        }
+        ui.add_space(12.);
         ui.label(
             RichText::new(lang.text("Расширенное редактирование записей внешности V."))
                 .color(MUTED),

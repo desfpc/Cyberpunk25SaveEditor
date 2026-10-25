@@ -1,8 +1,8 @@
 //! UI translations only. Save identifiers and user-entered values are never translated.
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub enum Language {
-    #[default]
     Russian,
+    #[default]
     English,
 }
 impl Language {
@@ -38,6 +38,15 @@ const MESSAGES:&[(&str,&str)]=&[
     ("Персонаж", "Player"),
     ("Инвентарь", "Inventory"),
     ("Внешность", "Appearance"),
+    ("Тип тела", "Body type"),
+    ("Тип голоса", "Voice type"),
+    ("Мужское", "Male"),
+    ("Женское", "Female"),
+    ("Мужской", "Masculine"),
+    ("Женский", "Feminine"),
+    ("Тип тела изменён; внешность сброшена к базовому пресету", "Body type updated; appearance reset to the default preset"),
+    ("Тип голоса изменён", "Voice type updated"),
+    ("Смена тела сбрасывает настройки внешности к базовому пресету выбранного типа. Голос выбирается независимо. Изменения можно отменить.", "Changing body type resets appearance to the selected body's default preset. Voice is selected independently. Changes can be undone."),
     ("Гараж", "Garage"),
     ("Квестовые флаги", "Quest facts"),
     ("Данные сохранения", "Save information"),
@@ -141,6 +150,10 @@ const MESSAGES:&[(&str,&str)]=&[
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn english_is_the_startup_default() {
+        assert!(Language::default() == Language::English);
+    }
     #[test]
     fn switching_retranslates_status_without_touching_paths() {
         let ru = "Загружено: /tmp/Сохранение/sav.dat";

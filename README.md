@@ -12,7 +12,7 @@
 
 ### Запуск
 
-Готовая версия **0.1.1** — установка Rust и сборка не нужны:
+Готовая версия **0.1.2** — установка Rust и сборка не нужны:
 
 | Платформа | Скачать | Содержимое |
 | --- | --- | --- |
@@ -27,7 +27,7 @@
 Язык интерфейса переключается в верхней панели: **Русский / English**.
 Перевод применяется сразу, включая сообщения о последних действиях; загруженное
 сохранение, значения полей и история отмены остаются на месте. По умолчанию
-при запуске выбран русский язык. Внутренние идентификаторы игры не переводятся.
+при запуске выбран английский язык. Внутренние идентификаторы игры не переводятся.
 
 Откройте `sav.dat` кнопкой в верхней панели. При разработке также доступна
 кнопка **Открыть saveExample**. Приложение работает локально, без аккаунта и сети.
@@ -50,7 +50,7 @@
 | Персонаж | Пять атрибутов, уровень, репутация, пять навыков, очки развития и биочипа |
 | Инвентарь | Контейнеры, деньги, количества существующих стеков, квестовые флаги предметов, поиск |
 | Добавление ресурсов | Деньги, компоненты пяти уровней, четыре вида боеприпасов |
-| Внешность | Расширенный редактор существующих appearance definitions и morph targets |
+| Внешность | Мужское/женское тело и голос, расширенный редактор appearance definitions и morph targets |
 | Гараж | Добавление/удаление доступного для вызова транспорта, сохранение неизвестных записей |
 | Квестовые флаги | Поиск, редактирование, добавление по имени, пресеты доступности концовки/романов, JSON-экспорт |
 | Диагностика | Версии, число узлов, размеры, повторная проверка записи |
@@ -68,6 +68,11 @@ forced modifier игрока в **новом StatsSystem 2.5** (`valuesOptimized
 узла пересчитываются смещения и размеры родительских узлов. При добавлении
 предмета обновляются ID узлов, ссылки и счётчики инвентаря.
 
+Смена типа тела сбрасывает внешность к базовому пресету выбранного типа и
+синхронизирует пол в `PlayerPuppetPS`. Выбранный голос сохраняется. Переключатель
+голоса меняет его независимо от тела. Оба действия поддерживают отмену.
+Экспорт создаёт отдельную копию, оригинал не изменяется.
+
 ### Текущие границы
 
 Это первая рабочая версия, а не полная замена всех функций CyberCAT.
@@ -78,7 +83,7 @@ forced modifier игрока в **новом StatsSystem 2.5** (`valuesOptimized
   запуск на Windows пока не проверен. CI также поддерживает нативную MSVC-сборку.
 - Релизы не подписаны сертификатами Apple/Microsoft и не нотарифицированы.
 - Внешность редактируется по внутренним именам игры, без 3D-просмотра и
-  гарантии существования введённого ресурса. Смена пола, жизненного пути,
+  гарантии существования введённого ресурса. Смена жизненного пути,
   импорт пресетов и автоматический подбор связанных ресурсов не реализованы.
 - Добавление произвольного оружия, одежды, имплантов и модификаторов предметов
   не включено. Уникальные предметы можно просматривать и менять их квестовый флаг.
@@ -129,6 +134,7 @@ cargo build --release --locked --target x86_64-pc-windows-msvc
 
 Разработал **Sergei Peshalov** · [GitHub: desfpc](https://github.com/desfpc).
 
+- `src/appearance.rs` — тип тела и голоса, базовые пресеты внешности.
 - `src/binary.rs` — чтение VLQ и строк REDengine с проверкой границ.
 - `src/save.rs` — контейнер VASC, LZ4, узлы, инвентарь, флаги, внешность, гараж, экспорт.
 - `src/package.rs` — RED packages, развитие персонажа, оптимизированные статы 2.5.
@@ -155,7 +161,7 @@ Project repository: [desfpc/Cyberpunk25SaveEditor](https://github.com/desfpc/Cyb
 
 ### Getting started
 
-Download version **0.1.1** — no Rust installation or build step required:
+Download version **0.1.2** — no Rust installation or build step required:
 
 | Platform | Download | Contents |
 | --- | --- | --- |
@@ -169,7 +175,7 @@ Local packaging commands generate their output in `dist/`.
 
 Switch the interface language in the top bar: **Русский / English**.
 Translations apply immediately, including the latest status message. The loaded
-save, field values and undo history stay in place. Russian is selected by default
+save, field values and undo history stay in place. English is selected by default
 at startup. Internal game identifiers are not translated.
 
 Use **Open sav.dat** in the top bar to load a save. During development, the
@@ -194,7 +200,7 @@ verification does not replace checking that the edited save loads in the game.
 | Player | Five attributes, level, Street Cred, five skills, development and Relic points |
 | Inventory | Containers, money, existing stack quantities, item quest flags and search |
 | Add resources | Money, five tiers of crafting components and four ammunition types |
-| Appearance | Advanced editing of existing appearance definitions and morph targets |
+| Appearance | Male/female body and voice controls, advanced editing of appearance definitions and morph targets |
 | Garage | Add or remove callable vehicles while preserving unknown entries |
 | Quest facts | Search, edit, add by name, ending/romance availability presets and JSON export |
 | Diagnostics | Version information, node counts, sizes and write/read-back verification |
@@ -211,6 +217,11 @@ shared with another entity, the entire edit is rejected. Unknown nodes, fields a
 bytes remain in the save. Resizing a node updates offsets and parent node sizes.
 Adding an item updates node IDs, links and inventory counts.
 
+Changing body type resets appearance to the selected body's default preset and
+synchronizes gender in `PlayerPuppetPS`, preserving the selected voice. Voice
+can be changed independently. Both edits support undo; the original save remains
+unchanged when exporting a new copy.
+
 ### Current limitations
 
 This is an initial working version and does not replace every CyberCAT feature.
@@ -221,7 +232,7 @@ This is an initial working version and does not replace every CyberCAT feature.
   not yet been run on Windows. CI also supports a native MSVC build.
 - Builds are not signed with Apple/Microsoft developer certificates or notarized.
 - Appearance editing uses internal game names, without a 3D preview or validation
-  that the entered resource exists. Gender changes, life path changes, preset
+  that the entered resource exists. Life path changes, preset
   import and automatic selection of related resources are not implemented.
 - Adding arbitrary weapons, clothing, cyberware and item modifiers is not included.
   Existing unique items can be inspected and their quest flags can be changed.
@@ -274,6 +285,7 @@ status messages and preserving file paths and internal identifiers.
 
 Developed by **Sergei Peshalov** · [GitHub: desfpc](https://github.com/desfpc).
 
+- `src/appearance.rs` — body/voice types and default appearance presets.
 - `src/binary.rs` — bounds-checked REDengine VLQ and string reading.
 - `src/save.rs` — VASC container, LZ4, nodes, inventory, facts, appearance, garage and export.
 - `src/package.rs` — RED packages, player development and optimized 2.5 stats.

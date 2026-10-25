@@ -515,6 +515,9 @@ impl Save {
         Ok(())
     }
     fn garage(&self) -> Result<(usize, usize, usize)> {
+        self.persistent_entry("vehicleGarageComponentPS")
+    }
+    pub(crate) fn persistent_entry(&self, class_name: &str) -> Result<(usize, usize, usize)> {
         let n = self.node("PersistencySystem2")?;
         let mut r = Reader::new(&self.data, n.offset + 4);
         let ids = r.u32()? as usize;
@@ -533,12 +536,12 @@ impl Save {
             let size = r.u32()? as usize;
             let start = r.pos;
             r.bytes(size)?;
-            if hash == fnv64("vehicleGarageComponentPS") {
+            if hash == fnv64(class_name) {
                 found.push((size_pos, start, r.pos));
             }
         }
         ensure!(r.pos == n.offset + n.size, "Unknown persistency trailer");
-        ensure!(found.len() == 1, "Expected a unique garage");
+        ensure!(found.len() == 1, "Expected a unique {class_name} entry");
         Ok(found[0])
     }
     fn garage_array(&self) -> Result<(usize, usize, Vec<Vehicle>)> {

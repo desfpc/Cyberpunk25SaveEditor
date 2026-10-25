@@ -13,11 +13,11 @@ investigated against the supplied macOS save.
   Only the record-name catalog is shipped; no Oodle/kraken library is required at runtime.
   The extraction script accepts an already decompressed table.
 
-The fact and vehicle dictionaries are from CyberCAT-SimpleGUI (MIT):
+The fact and vehicle dictionaries and default appearance presets are from CyberCAT-SimpleGUI (MIT):
 
 - https://github.com/Deweh/CyberCAT-SimpleGUI
 - Reference commit: c1fd00305e7db905a4e7de8cfa360d4f4efee3b2
-- assets/facts.json, assets/vehicles.json
+- assets/facts.json, assets/vehicles.json, assets/appearance_male.json, assets/appearance_female.json
 - Copyright and permission notice: assets/CyberCAT-LICENSE
 
 Cargo dependency licenses are specified by the corresponding packages and are

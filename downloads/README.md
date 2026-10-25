@@ -1,4 +1,4 @@
-# Night City Save Editor 0.1.1
+# Night City Save Editor 0.1.2
 
 ## Русский
 
@@ -7,7 +7,9 @@
 - [Windows x64](NightCity-Windows-x64.zip) — распакуйте ZIP и запустите `nightcity-save-editor.exe`.
 - [macOS Apple Silicon / Intel](NightCity-macOS-universal.zip) — распакуйте ZIP и откройте `Night City Save Editor.app`.
 
-Оба пакета содержат интерфейс Русский / English. Поддерживается Cyberpunk 2077 2.5.
+По умолчанию выбран English; русский доступен в переключателе языка.
+В разделе «Внешность» доступны независимые переключатели тела и голоса; смена тела
+сбрасывает внешность к базовому пресету выбранного типа и поддерживает отмену. Поддерживается Cyberpunk 2077 2.5.
 Контрольные суммы SHA-256 находятся в [SHA256SUMS.txt](SHA256SUMS.txt).
 
 Пакеты не подписаны сертификатами Apple/Microsoft и не нотарифицированы.
@@ -21,7 +23,9 @@ Ready-to-run packages; no compilation required:
 - [Windows x64](NightCity-Windows-x64.zip) — extract the ZIP and run `nightcity-save-editor.exe`.
 - [macOS Apple Silicon / Intel](NightCity-macOS-universal.zip) — extract the ZIP and open `Night City Save Editor.app`.
 
-Both packages include the Russian / English interface. Cyberpunk 2077 2.5 is supported.
+English is selected by default; Russian is available in the language selector.
+Appearance includes independent body and voice controls. Changing body type resets
+appearance to its default preset and can be undone. Cyberpunk 2077 2.5 is supported.
 SHA-256 checksums are provided in [SHA256SUMS.txt](SHA256SUMS.txt).
 
 Packages are not signed with Apple/Microsoft developer certificates or notarized.
