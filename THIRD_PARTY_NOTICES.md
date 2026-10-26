@@ -20,6 +20,14 @@ The fact and vehicle dictionaries and default appearance presets are from CyberC
 - assets/facts.json, assets/vehicles.json, assets/appearance_male.json, assets/appearance_female.json
 - Copyright and permission notice: assets/CyberCAT-LICENSE
 
+The bundled appearance presets include local 2.5 cyberarm corrections and
+additional elemental groups. The male arm groups, slot labels and perspective
+routing were checked against a natively male 2.5 save and updated accordingly. assets/cyberarm_definitions_25.json contains only
+resource hashes and appearance-definition identifiers read from a locally installed
+Cyberpunk 2077 2.5 copy. It excludes game resource files and dismemberment config
+names. scripts/extract_cyberarm_definitions.py reproduces this catalog from already
+decompressed CR2W resources. No archive extractor or decompressor is distributed.
+
 Cargo dependency licenses are specified by the corresponding packages and are
 recorded by the exact versions in Cargo.lock. Main runtime dependencies include
 eframe/egui (MIT OR Apache-2.0), rfd (MIT), lz4_flex (MIT), anyhow

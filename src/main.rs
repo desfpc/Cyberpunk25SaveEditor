@@ -23,6 +23,7 @@ enum Tab {
     Vehicles,
     Facts,
     Tools,
+    About,
 }
 impl Tab {
     fn title(self, lang: Language) -> &'static str {
@@ -33,6 +34,7 @@ impl Tab {
             Self::Vehicles => "Гараж",
             Self::Facts => "Квестовые флаги",
             Self::Tools => "Данные сохранения",
+            Self::About => "О нас",
         })
     }
 }
@@ -253,7 +255,7 @@ impl App {
     }
     fn save_preset(&mut self, before_change: bool) -> bool {
         let title = self.language.text(if before_change {
-            "Сохранить пресет перед изменением тела"
+            "Сохранить текущий пресет перед изменением внешности"
         } else {
             "Сохранить пресет персонажа"
         });
@@ -394,6 +396,7 @@ impl App {
                     Tab::Vehicles,
                     Tab::Facts,
                     Tab::Tools,
+                    Tab::About,
                 ]
                 .into_iter()
                 .enumerate()
@@ -404,7 +407,7 @@ impl App {
                         .size(14.);
                     if ui
                         .add_sized(
-                            [208., 44.],
+                            [208., 38.],
                             egui::Button::new(text).fill(if selected {
                                 Color32::from_rgb(22, 47, 54)
                             } else {
@@ -416,7 +419,7 @@ impl App {
                         self.tab = t;
                         self.search.clear();
                     }
-                    ui.add_space(5.);
+                    ui.add_space(4.);
                 }
                 ui.add_space(24.);
                 ui.separator();
@@ -869,7 +872,7 @@ impl App {
                 }
             }
         }
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             if ui.button(lang.text("Сохранить пресет персонажа")).clicked()
             {
                 self.save_preset(false);
@@ -877,6 +880,15 @@ impl App {
             if ui.button(lang.text("Загрузить пресет персонажа")).clicked()
             {
                 self.load_preset();
+            }
+            if ui.button(lang.text("Исправить киберруки")).clicked() && self.save_preset(true)
+            {
+                self.edit(
+                    lang.text("Внешность киберрук исправлена"),
+                    |s| s.repair_cyberarm_appearance(),
+                );
+                self.appearance_index = None;
+                self.appearance_value.clear();
             }
         });
         ui.label(RichText::new(lang.text("Перед сменой тела сохраните пресет. Загрузка пресета восстанавливает тело, голос и всю внешность. Отмена сохранения пресета отменяет смену тела.")).small().color(MUTED));
@@ -984,21 +996,45 @@ impl App {
                 }
             }
         });
-        ui.add_space(20.);
-        ui.label(RichText::new(lang.text("О ПРОЕКТЕ")).color(CYAN));
-        ui.label(lang.text("Разработал Sergei Peshalov"));
-        ui.hyperlink_to("GitHub · desfpc", "https://github.com/desfpc");
-        ui.add_space(8.);
-        ui.label(lang.text("Нативный интерфейс egui. Rust, LZ4, формат REDengine."));
-        ui.hyperlink_to(
-            lang.text("CyberCAT-SimpleGUI · исходный ориентир"),
-            "https://github.com/Deweh/CyberCAT-SimpleGUI",
-        );
-        ui.hyperlink_to(
-            lang.text("WolvenKit · исследование формата"),
-            "https://github.com/WolvenKit/WolvenKit",
-        );
-        ui.label(lang.text("GPL-3.0-only. Словари CyberCAT используются по MIT."));
+    }
+    fn about(&self, ui: &mut egui::Ui) {
+        let lang = self.language;
+        egui::ScrollArea::vertical().id_salt("about").show(ui, |ui| {
+            ui.set_max_width(ui.available_width().min(760.));
+            ui.label(RichText::new("Sergei Peshalov / desfpc").size(23.).strong().color(YELLOW));
+            ui.add_space(10.);
+            ui.label(lang.text("Я разработчик из Лимасола, Кипр. Создаю веб-сервисы и инструменты на PHP и Go, развиваю проекты с открытым исходным кодом. В свободное время занимаюсь музыкой."));
+            ui.add_space(24.);
+            ui.label(RichText::new(lang.text("Мои проекты")).strong().color(CYAN));
+            ui.add_space(8.);
+            ui.hyperlink_to("nozhove.com", "https://nozhove.com");
+            ui.label(RichText::new(lang.text("Портал с сервисами для повседневных задач.")).small().color(MUTED));
+            ui.add_space(10.);
+            ui.hyperlink_to("GitHub · desfpc", "https://github.com/desfpc");
+            ui.label(RichText::new(lang.text("Мои проекты с открытым исходным кодом.")).small().color(MUTED));
+            ui.add_space(24.);
+            ui.label(RichText::new(lang.text("Моя музыка")).strong().color(CYAN));
+            ui.add_space(8.);
+            for (name, url) in [
+                ("Čerdyn", "https://music.youtube.com/channel/UCkWguomieoA4iJkBpQTFhCQ"),
+                ("Kasapski Nozhove", "https://music.youtube.com/channel/UC8ZQp1eYK3oO--Ir35gAChw"),
+                ("Gut Splinters", "https://music.youtube.com/channel/UCySV3dn2r4YlcQEVZ0kmRJA"),
+                ("W1NTERH8", "https://music.youtube.com/channel/UCiNgoh6kHN0EPxhVd1MrRbw"),
+            ] {
+                ui.hyperlink_to(name, url);
+                ui.add_space(5.);
+            }
+            ui.add_space(24.);
+            ui.separator();
+            ui.add_space(8.);
+            ui.label(RichText::new(format!("Night City Save Editor · v{}", env!("CARGO_PKG_VERSION"))).small().color(MUTED));
+            egui::CollapsingHeader::new(lang.text("Благодарности и лицензия")).show(ui, |ui| {
+                ui.label(lang.text("Нативный интерфейс egui. Rust, LZ4, формат REDengine."));
+                ui.hyperlink_to(lang.text("CyberCAT-SimpleGUI · исходный ориентир"), "https://github.com/Deweh/CyberCAT-SimpleGUI");
+                ui.hyperlink_to(lang.text("WolvenKit · исследование формата"), "https://github.com/WolvenKit/WolvenKit");
+                ui.label(lang.text("GPL-3.0-only. Словари CyberCAT используются по MIT."));
+            });
+        });
     }
 }
 impl eframe::App for App {
@@ -1062,7 +1098,9 @@ impl eframe::App for App {
                 });
             });
             ui.add_space(16.);
-            if self.save.is_none() {
+            if self.tab == Tab::About {
+                self.about(ui);
+            } else if self.save.is_none() {
                 ui.add_space(70.);
                 ui.label(
                     RichText::new(lang.text("ВАШ НОВЫЙ БИЛД НАЧИНАЕТСЯ ЗДЕСЬ"))
@@ -1104,6 +1142,7 @@ impl eframe::App for App {
                     Tab::Vehicles => self.vehicles(ui),
                     Tab::Facts => self.facts(ui),
                     Tab::Tools => self.tools(ui),
+                    Tab::About => self.about(ui),
                 }
             }
         });

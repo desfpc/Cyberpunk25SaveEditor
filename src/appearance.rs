@@ -16,6 +16,8 @@ pub struct CharacterPreset {
     version: u32,
     game: u32,
     payload: Vec<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    cyberware_customization: Option<crate::cosmetic::CosmeticSnapshot>,
 }
 
 impl CharacterPreset {
@@ -45,7 +47,9 @@ impl CharacterPreset {
 
     fn validate(&self) -> Result<AppearanceTypes> {
         ensure!(
-            self.format == "NightCityCharacterPreset" && self.version == 1 && self.game == 2500,
+            self.format == "NightCityCharacterPreset"
+                && matches!(self.version, 1 | 2)
+                && self.game == 2500,
             "Unsupported character preset format"
         );
         let mut r = Reader::new(&self.payload, 0);
@@ -94,6 +98,9 @@ impl CharacterPreset {
             r.pos == self.payload.len(),
             "Unexpected trailing preset data"
         );
+        if let Some(cosmetics) = &self.cyberware_customization {
+            cosmetics.validate()?;
+        }
         Ok(types)
     }
 }
@@ -219,7 +226,7 @@ fn groups(out: &mut Vec<u8>, groups: &[Group]) -> Result<()> {
     }
     Ok(())
 }
-fn default_appearance(header: &[u8], body: Gender) -> Result<Vec<u8>> {
+pub(crate) fn default_appearance(header: &[u8], body: Gender) -> Result<Vec<u8>> {
     let raw = match body {
         Gender::Male => include_str!("../assets/appearance_male.json"),
         Gender::Female => include_str!("../assets/appearance_female.json"),
@@ -254,9 +261,10 @@ impl Save {
         let n = self.node(NODE)?;
         let preset = CharacterPreset {
             format: "NightCityCharacterPreset".into(),
-            version: 1,
+            version: 2,
             game: self.game,
             payload: self.data[n.offset + 4..n.offset + n.size].to_vec(),
+            cyberware_customization: crate::cosmetic::CosmeticSnapshot::capture(self)?,
         };
         preset.validate()?;
         Ok(preset)
@@ -272,6 +280,10 @@ impl Save {
         // Platform and format header belong to the destination save.
         payload[..9].copy_from_slice(&candidate.data[n.offset + 4..n.offset + 13]);
         candidate.replace_node(NODE, payload)?;
+        candidate.repair_cyberarm_appearance()?;
+        if let Some(cosmetics) = &preset.cyberware_customization {
+            cosmetics.apply(&mut candidate)?;
+        }
         candidate.appearances()?;
         if let Some(metadata) = &mut candidate.metadata {
             metadata["Data"]["metadata"]["bodyGender"] = types.body.name().into();
@@ -312,7 +324,7 @@ impl Save {
     pub fn set_body_type(&mut self, body: Gender) -> Result<()> {
         let current = self.appearance_types()?;
         if current.body == body {
-            return Ok(());
+            return self.repair_cyberarm_appearance();
         }
         let mut candidate = self.clone();
         candidate.set_puppet_gender(body)?;
@@ -320,6 +332,8 @@ impl Save {
         let header = &candidate.data[n.offset + 4..n.offset + 15];
         let payload = default_appearance(header, body)?;
         candidate.replace_node(NODE, payload)?;
+        candidate.preserve_cyberarm_cosmetics(self)?;
+        candidate.repair_cyberarm_appearance()?;
         ensure!(
             candidate.appearance_types()?
                 == AppearanceTypes {

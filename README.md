@@ -12,7 +12,7 @@
 
 ### Запуск
 
-Готовая версия **0.1.3** — установка Rust и сборка не нужны:
+Готовая версия **0.1.6** — установка Rust и сборка не нужны:
 
 | Платформа | Скачать | Содержимое |
 | --- | --- | --- |
@@ -42,6 +42,41 @@
 Для использования результата закройте игру и поместите экспортированную папку
 рядом с остальными игровыми сохранениями, затем загрузите её через меню игры.
 Проверка структуры файла редактором не заменяет проверку загрузки в игре.
+
+Кнопка **О нас** открывает страницу автора с проектами и музыкой; она доступна
+и до загрузки сохранения.
+
+### История изменений 0.1.2 → 0.1.6
+
+Изменения за **26 октября 2026 года**. Версия 0.1.2 — исходная точка сравнения.
+
+#### 0.1.2 — исходная версия
+
+- Независимый выбор тела и голоса, русский и английский интерфейс с английским по умолчанию, отмена/повтор и экспорт отдельной копии сохранения.
+
+#### 0.1.3 — пресеты и сохранение файлов
+
+- Добавлены файлы `.ncpreset`: сохраняются тело, голос и полный блок внешности — ресурсы, морфы, группы рук, настройки камер и теги. Перед сменой тела или загрузкой другого пресета предлагается сохранить текущую внешность; отмена диалога отменяет изменение.
+- Последняя успешно открытая папка сейва запоминается между запусками.
+- Добавлена замена текущего сейва с отдельной резервной копией в `old/backup-…`. Переключатель по умолчанию выключен и сбрасывается при открытии сейва. Запись проверяется повторным чтением; замена отклоняется, если резервную копию создать нельзя или исходный файл изменился на диске.
+
+#### 0.1.4 — исправление ресурсов киберрук
+
+- Исправлены устаревшие имена внешности Gorilla Arms, Mantis Blades и Monowire; восстановлены 16 элементальных групп для четырёх типов киберрук, включая Projectile Launcher.
+- Добавлены подбор проверенных мужских/женских вариантов и кнопка «Исправить киберруки» для существующих сейвов.
+- Пресеты версии 2 сохраняют отдельные косметические настройки имплантов (`CyberwareCustomizationSystem`) и поддерживают перенос между сейвами. Старые пресеты версии 1 остаются совместимыми; инвентарь, установленные импланты, характеристики и квесты не заменяются содержимым пресета.
+
+#### 0.1.5 — исправление повторного исчезновения рук
+
+- По исходному мужскому сейву обновлена структура: 34 группы рук, отдельные слоты FPP/TPP и 5 связей переключения камер. Ремонт переводит старые объединённые группы в эту структуру, устраняя причину повторного исчезновения рук при обновлении внешности имплантов в игре.
+- Ремонт сохраняет выбранные цвета и косметику, лицо, тело, голос и экипировку. Пользователь подтвердил в игре работу мужских рук после обновления внешности и восстановление женской внешности с руками из пресета.
+
+#### 0.1.6 — страница автора
+
+- Добавлена кнопка «О нас / About us» и отдельная страница, доступная без загрузки сейва: короткое описание разработчика, nozhove.com и GitHub.
+- Добавлены музыкальные проекты Čerdyn, Kasapski Nozhove, Gut Splinters и W1NTERH8 со ссылками на YouTube Music. Страница переведена на русский и английский.
+
+Для релизов обновлены Windows x64 и универсальные macOS-пакеты, версии приложений и контрольные суммы. Для 0.1.6 прошли 27 тестов и Clippy; запуск Windows-сборки пока не проверен.
 
 ### Возможности
 
@@ -76,9 +111,23 @@ forced modifier игрока в **новом StatsSystem 2.5** (`valuesOptimized
 **Загрузить пресет персонажа** восстанавливает тело, голос и весь блок внешности:
 ресурсы киберрук, морфы, настройки камер и теги. Перед загрузкой другого пресета
 текущая внешность также сохраняется в отдельный файл. Инвентарь, установленные
-импланты, характеристики и квесты пресет не меняет. Доступна отмена/повтор.
-Базовые пресеты пока содержат неполные данные киберрук 2.5; сохранение собственного
-пресета позволяет восстановить исходную внешность при возвращении обратно.
+импланты, характеристики и квесты пресет не меняет. Пресет версии 2 также сохраняет
+все сериализованные поля косметической системы `CyberwareCustomizationSystem`,
+включая выбранный тип и бренд. Имена полей и значений переносятся между сейвами
+по именам, а не по локальным числовым ID. Доступна отмена/повтор.
+
+Смена тела сохраняет косметические и элементальные варианты киберрук и подбирает
+проверенные мужские/женские определения внешности. Встроенные пресеты обновлены
+для 2.5: исправлены устаревшие имена Gorilla Arms, Mantis Blades и Monowire,
+добавлены 16 элементальных групп. Мужской пресет использует проверенные по
+исходному мужскому сейву отдельные FPP/TPP-группы, имена слотов и маршруты камер
+для всех четырёх типов киберрук. Ремонт обновляет также старую объединённую
+структуру, из-за которой руки могли повторно исчезать при обновлении внешности. Кнопка **Исправить киберруки** исправляет эти
+ошибки в уже изменённом сейве без сброса лица, тела, голоса и снаряжения. Загрузка
+старого пресета версии 1 тоже исправляет известные ссылки рук, сохраняя текущие
+отдельные косметические настройки, которых в старом файле ещё не было.
+Неизвестный гендерный вариант модифицированных ресурсов не подменяется догадкой:
+операция отклоняется, если для него нельзя проверить соответствие.
 
 Последняя успешно открытая папка сейва запоминается между запусками. Переключатель
 **Заменять сейв (копия в old)** по умолчанию выключен и сбрасывается при открытии
@@ -93,8 +142,9 @@ forced modifier игрока в **новом StatsSystem 2.5** (`valuesOptimized
 
 Это первая рабочая версия, а не полная замена всех функций CyberCAT.
 
-- Проверено предоставленное сохранение **macOS 2.5 / Phantom Liberty**;
-  загрузка изменённой копии в самой игре пока не проверена.
+- Проверены предоставленные сохранения **macOS 2.5 / Phantom Liberty**. Пользователь
+  подтвердил в игре смену тела, восстановление пресета и обновление внешности киберрук.
+  Это не заменяет отдельную проверку остальных редактируемых параметров.
 - macOS GUI проверен вручную. Windows EXE собран кросс-компиляцией;
   запуск на Windows пока не проверен. CI также поддерживает нативную MSVC-сборку.
 - Релизы не подписаны сертификатами Apple/Microsoft и не нотарифицированы.
@@ -177,7 +227,7 @@ Project repository: [desfpc/Cyberpunk25SaveEditor](https://github.com/desfpc/Cyb
 
 ### Getting started
 
-Download version **0.1.3** — no Rust installation or build step required:
+Download version **0.1.6** — no Rust installation or build step required:
 
 | Platform | Download | Contents |
 | --- | --- | --- |
@@ -208,6 +258,41 @@ changes, the application offers to export a copy first.
 To use the result, close the game and place the exported folder alongside your
 other game saves, then load it from the game's menu. The editor's structural
 verification does not replace checking that the edited save loads in the game.
+
+**About us** opens the author’s projects and music page, including before loading
+a save.
+
+### Changelog: 0.1.2 → 0.1.6
+
+Changes made on **October 26, 2026**. Version 0.1.2 is the comparison baseline.
+
+#### 0.1.2 — baseline
+
+- Independent body and voice controls, Russian/English UI with English selected by default, undo/redo and export to a separate save copy.
+
+#### 0.1.3 — presets and save handling
+
+- Added `.ncpreset` files capturing body, voice and the entire appearance block: resources, morphs, arm groups, camera mappings and tags. Before changing body or loading another preset, the current appearance must be saved; cancelling the dialog cancels the change.
+- The last successfully opened save folder is remembered between launches.
+- Added optional replacement of the current save with a separate backup in `old/backup-…`. The switch is off by default and resets when a save is opened. Output is verified by reading it back; replacement is refused if backup creation fails or the source file has changed on disk.
+
+#### 0.1.4 — cyberarm resource fixes
+
+- Fixed obsolete Gorilla Arms, Mantis Blades and Monowire appearance names; restored 16 elemental groups for all four cyberarm types, including Projectile Launcher.
+- Added verified male/female appearance mapping and a Repair cyberarm appearance button for existing saves.
+- Version 2 presets capture the separate cyberware cosmetic settings (`CyberwareCustomizationSystem`) and support transfer between saves. Version 1 presets remain compatible; presets do not replace inventory, equipped cyberware, stats or quests.
+
+#### 0.1.5 — arms disappearing again after a refresh
+
+- Updated the male layout against a natively male save: 34 arm groups, separate FPP/TPP slots and 5 camera mappings. Repair upgrades legacy combined groups, addressing arms disappearing again after an in-game cyberware appearance refresh.
+- Repair retains selected colors and cosmetics, face, body, voice and equipment. The user confirmed male arms work after refreshing their appearance and a female preset restores both appearance and arms in game.
+
+#### 0.1.6 — author page
+
+- Added an About us button and a separate page available before loading a save, with a short developer biography, nozhove.com and GitHub links.
+- Added YouTube Music links for Čerdyn, Kasapski Nozhove, Gut Splinters and W1NTERH8. The page supports Russian and English.
+
+Windows x64 and universal macOS packages, application versions and checksums were updated for these releases. Version 0.1.6 passed 27 tests and Clippy; the Windows build has not yet been run on Windows.
 
 ### Features
 
@@ -240,8 +325,10 @@ changing body type, the editor asks you to save the current appearance to a new
 presets manually. Loading a preset restores its body type, voice and the complete
 appearance block, including cyberarm resource groups, morphs, perspectives and tags.
 The current appearance must be backed up before loading another preset as well.
-Presets do not change inventory, equipped cyberware, stats or quests. Voice can
-still be changed independently, and appearance changes support undo/redo.
+Presets do not change inventory, equipped cyberware, stats or quests. Version 2
+also captures every serialized field of `CyberwareCustomizationSystem`, including
+selected type and brand. Package-local name IDs are rebound by name on import.
+Voice can still be changed independently, and appearance changes support undo/redo.
 
 The last successfully opened save folder is remembered between launches. Use
 **Replace save (backup in old)** to save directly into the loaded save folder.
@@ -252,17 +339,26 @@ save** first verifies an edited copy and backs up the current files to a new
 replacement keeps its own backup. Replacement is refused if the source `sav.dat`
 has changed on disk since it was loaded, or if the backup cannot be created.
 
-Restoring an original preset preserves that character's appearance data; switching
-to a default body still uses the bundled defaults, whose cyberarm groups are
-incomplete for 2.5. Presets do not establish that those defaults render correctly
-in game. Keep the original preset when switching body type.
+Body changes preserve cyberarm cosmetic and elemental selections and map verified
+male/female appearance definitions. The bundled 2.5 presets fix obsolete Gorilla
+Arms, Mantis Blades and Monowire names and include all 16 elemental groups.
+The male preset uses native 2.5 FPP/TPP groups, slot names and camera routing for
+all four cyberarm types, checked against an originally male save. Repair upgrades
+legacy combined groups as well, addressing disappearance after an appearance refresh.
+**Repair cyberarm appearance** fixes these known errors in existing saves without
+resetting the face, body, voice or equipment. Importing a version 1 preset also
+repairs known arm references while retaining the destination's separate cosmetic
+settings, which older presets did not capture. Unknown gendered mod resources
+without verified counterparts are rejected instead of being guessed.
+In-game rendering still needs to be checked after loading the repaired save.
 
 ### Current limitations
 
 This is an initial working version and does not replace every CyberCAT feature.
 
-- Checked against the supplied **macOS 2.5 / Phantom Liberty** save. Loading an
-  edited copy in the game has not yet been verified.
+- Checked against supplied **macOS 2.5 / Phantom Liberty** saves. The user confirmed
+  body changes, preset restoration and cyberarm appearance refresh in game.
+  Other editable parameters still require their own in-game checks.
 - The macOS GUI was checked manually. The Windows EXE was cross-compiled but has
   not yet been run on Windows. CI also supports a native MSVC build.
 - Builds are not signed with Apple/Microsoft developer certificates or notarized.

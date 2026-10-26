@@ -145,6 +145,70 @@ impl Package {
             .map(|n| n as u16)
             .with_context(|| format!("Name {s} absent from package"))
     }
+    /// Append names without renumbering existing IDs or rewriting unknown chunks.
+    pub(crate) fn ensure_names(&mut self, names: &[String]) -> Result<()> {
+        let mut missing = Vec::new();
+        for name in names {
+            if !self.names.contains(name) && !missing.contains(name) {
+                ensure!(
+                    !name.contains('\0') && name.len() < 255,
+                    "Invalid package name"
+                );
+                missing.push(name.clone());
+            }
+        }
+        if missing.is_empty() {
+            return Ok(());
+        }
+        ensure!(
+            self.names.len() + missing.len() <= u16::MAX as usize,
+            "Package name pool is full"
+        );
+        let header = if u16::from_le_bytes(self.bytes[2..4].try_into()?) == 7 {
+            16
+        } else {
+            8
+        };
+        let nd = u32_at(&self.bytes, header)? as usize;
+        let ns = u32_at(&self.bytes, header + 4)? as usize;
+        let cd = u32_at(&self.bytes, header + 12)? as usize;
+        let descriptors = missing.len() * 4;
+        let extra: usize = missing.iter().map(|s| s.len() + 1).sum();
+        let delta = descriptors + extra;
+        ensure!(cd + delta < 0x1000000, "Package name pool is too large");
+        let mut bytes = self.bytes[..self.base + ns].to_vec();
+        let mut position = self.desc + descriptors;
+        for name in &missing {
+            bytes.extend(((position as u32) | (((name.len() + 1) as u32) << 24)).to_le_bytes());
+            position += name.len() + 1;
+        }
+        bytes.extend(&self.bytes[self.base + ns..self.base + self.desc]);
+        for name in &missing {
+            bytes.extend(name.as_bytes());
+            bytes.push(0);
+        }
+        bytes.extend(&self.bytes[self.base + self.desc..]);
+        for i in (nd..ns).step_by(4) {
+            let value = u32_at(&self.bytes, self.base + i)?;
+            put32(
+                &mut bytes,
+                self.base + i,
+                (value & 0xff000000) | ((value & 0xffffff) + descriptors as u32),
+            )?;
+        }
+        put32(&mut bytes, header + 4, (ns + descriptors) as u32)?;
+        put32(&mut bytes, header + 8, (self.desc + delta) as u32)?;
+        put32(&mut bytes, header + 12, (cd + delta) as u32)?;
+        for (i, (_, start, _)) in self.chunks.iter().enumerate() {
+            put32(
+                &mut bytes,
+                self.base + self.desc + delta + i * 8 + 4,
+                (start - self.base + delta) as u32,
+            )?;
+        }
+        *self = Self::parse(bytes, true)?;
+        Ok(())
+    }
     pub fn class(&self, bytes: &[u8]) -> Result<Class> {
         let mut r = Reader::new(bytes, 0);
         let count = r.u16()? as usize;
@@ -195,7 +259,7 @@ impl Package {
         ensure!(end <= bytes.len(), "Class exceeds buffer");
         Ok(end)
     }
-    fn value_len(&self, t: &str, b: &[u8], depth: usize) -> Result<usize> {
+    pub(crate) fn value_len(&self, t: &str, b: &[u8], depth: usize) -> Result<usize> {
         if let Some(t) = t.strip_prefix("array:") {
             let count = u32_at(b, 0)? as usize;
             ensure!(count < 100000, "Array too large");
@@ -207,9 +271,9 @@ impl Package {
         }
         let size = match t {
             "Int32" | "Uint32" | "Float" => 4,
-            "Uint16" => 2,
-            "Uint64" | "TweakDBID" => 8,
-            "Bool" => 1,
+            "Uint16" | "Int16" | "CName" => 2,
+            "Uint64" | "Int64" | "Double" | "TweakDBID" => 8,
+            "Bool" | "Uint8" | "Int8" => 1,
             _ if t.starts_with("gamedata") || t == "gameStatIDType" => 2,
             _ if t.starts_with("handle:") => 4,
             _ => return self.class_len(b, depth),

@@ -41,9 +41,18 @@ impl Language {
     }
 }
 const MESSAGES:&[(&str,&str)]=&[
+    ("О нас", "About us"),
+    ("Я разработчик из Лимасола, Кипр. Создаю веб-сервисы и инструменты на PHP и Go, развиваю проекты с открытым исходным кодом. В свободное время занимаюсь музыкой.", "I'm a developer based in Limassol, Cyprus. I build web services and tools with PHP and Go, and work on open-source projects. In my spare time, I make music."),
+    ("Мои проекты", "My projects"),
+    ("Портал с сервисами для повседневных задач.", "A portal with services for everyday tasks."),
+    ("Мои проекты с открытым исходным кодом.", "My open-source projects."),
+    ("Моя музыка", "My music"),
+    ("Благодарности и лицензия", "Credits and license"),
+    ("Исправить киберруки", "Repair cyberarm appearance"),
+    ("Внешность киберрук исправлена", "Cyberarm appearance repaired"),
     ("Все изменения сохранены", "All changes saved"),
     ("Сохраните изменения перед продолжением.", "Save your changes before continuing."),
-    ("Сохранить пресет перед изменением тела", "Save preset before changing body"),
+    ("Сохранить текущий пресет перед изменением внешности", "Save current preset before changing appearance"),
     ("Сохранить пресет персонажа", "Save character preset"),
     ("Загрузить пресет персонажа", "Load character preset"),
     ("Пресет персонажа сохранён", "Character preset saved"),

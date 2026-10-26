@@ -1,6 +1,6 @@
 [package]
 name = "nightcity-save-editor"
-version = "0.1.3"
+version = "0.1.6"
 edition = "2021"
 authors = ["Sergei Peshalov"]
 homepage = "https://github.com/desfpc"

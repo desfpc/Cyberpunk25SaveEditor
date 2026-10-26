@@ -42,7 +42,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force dist/windows
           Copy-Item target/${{ matrix.target }}/release/nightcity-save-editor.exe dist/windows/
-          Copy-Item README.md,LICENSE,THIRD_PARTY_NOTICES.md dist/windows/
+          Copy-Item README.md,LICENSE,THIRD_PARTY_NOTICES.md,NEXUS_MODS_DESCRIPTION.md,NEXUS_MODS_DESCRIPTION.txt dist/windows/
           Copy-Item assets/CyberCAT-LICENSE dist/windows/
           Copy-Item dist/THIRD_PARTY_LICENSES.txt dist/windows/
           Compress-Archive -Path dist/windows/* -DestinationPath dist/NightCity-${{ matrix.target }}.zip
