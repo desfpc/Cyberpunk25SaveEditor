@@ -12,7 +12,7 @@
 
 ### Запуск
 
-Готовая версия **0.1.2** — установка Rust и сборка не нужны:
+Готовая версия **0.1.3** — установка Rust и сборка не нужны:
 
 | Платформа | Скачать | Содержимое |
 | --- | --- | --- |
@@ -70,8 +70,24 @@ forced modifier игрока в **новом StatsSystem 2.5** (`valuesOptimized
 
 Смена типа тела сбрасывает внешность к базовому пресету выбранного типа и
 синхронизирует пол в `PlayerPuppetPS`. Выбранный голос сохраняется. Переключатель
-голоса меняет его независимо от тела. Оба действия поддерживают отмену.
-Экспорт создаёт отдельную копию, оригинал не изменяется.
+голоса меняет его независимо от тела. Перед сменой тела редактор предлагает
+сохранить текущую внешность в отдельный файл `.ncpreset`. Отмена этого диалога
+отменяет смену тела. Кнопка **Сохранить пресет персонажа** доступна и отдельно.
+**Загрузить пресет персонажа** восстанавливает тело, голос и весь блок внешности:
+ресурсы киберрук, морфы, настройки камер и теги. Перед загрузкой другого пресета
+текущая внешность также сохраняется в отдельный файл. Инвентарь, установленные
+импланты, характеристики и квесты пресет не меняет. Доступна отмена/повтор.
+Базовые пресеты пока содержат неполные данные киберрук 2.5; сохранение собственного
+пресета позволяет восстановить исходную внешность при возвращении обратно.
+
+Последняя успешно открытая папка сейва запоминается между запусками. Переключатель
+**Заменять сейв (копия в old)** по умолчанию выключен и сбрасывается при открытии
+другого сохранения. При выключенном переключателе экспорт создаёт отдельную копию.
+При включённом кнопка **Заменить сохранение** сначала проверяет отредактированную
+копию и сохраняет текущие файлы в `old/backup-<метка времени>/`, затем заменяет
+сейв и метаданные. Повторная запись создаёт новую резервную копию. Если исходный
+`sav.dat` изменился на диске или резервную копию создать не удалось, замена
+отклоняется.
 
 ### Текущие границы
 
@@ -84,7 +100,7 @@ forced modifier игрока в **новом StatsSystem 2.5** (`valuesOptimized
 - Релизы не подписаны сертификатами Apple/Microsoft и не нотарифицированы.
 - Внешность редактируется по внутренним именам игры, без 3D-просмотра и
   гарантии существования введённого ресурса. Смена жизненного пути,
-  импорт пресетов и автоматический подбор связанных ресурсов не реализованы.
+  импорт пресетов CyberCAT и автоматический подбор связанных ресурсов не реализованы.
 - Добавление произвольного оружия, одежды, имплантов и модификаторов предметов
   не включено. Уникальные предметы можно просматривать и менять их квестовый флаг.
 - Пресеты квестовых флагов не гарантируют сюжетный результат при любом состоянии квестов.
@@ -161,7 +177,7 @@ Project repository: [desfpc/Cyberpunk25SaveEditor](https://github.com/desfpc/Cyb
 
 ### Getting started
 
-Download version **0.1.2** — no Rust installation or build step required:
+Download version **0.1.3** — no Rust installation or build step required:
 
 | Platform | Download | Contents |
 | --- | --- | --- |
@@ -218,9 +234,28 @@ bytes remain in the save. Resizing a node updates offsets and parent node sizes.
 Adding an item updates node IDs, links and inventory counts.
 
 Changing body type resets appearance to the selected body's default preset and
-synchronizes gender in `PlayerPuppetPS`, preserving the selected voice. Voice
-can be changed independently. Both edits support undo; the original save remains
-unchanged when exporting a new copy.
+synchronizes gender in `PlayerPuppetPS`, preserving the selected voice. Before
+changing body type, the editor asks you to save the current appearance to a new
+`.ncpreset` file; cancelling this dialog cancels the body change. You can also save
+presets manually. Loading a preset restores its body type, voice and the complete
+appearance block, including cyberarm resource groups, morphs, perspectives and tags.
+The current appearance must be backed up before loading another preset as well.
+Presets do not change inventory, equipped cyberware, stats or quests. Voice can
+still be changed independently, and appearance changes support undo/redo.
+
+The last successfully opened save folder is remembered between launches. Use
+**Replace save (backup in old)** to save directly into the loaded save folder.
+This switch is always off at startup and resets when another save is opened.
+With it off, **Export copy** retains the existing behavior. With it on, **Replace
+save** first verifies an edited copy and backs up the current files to a new
+`old/backup-<timestamp>/` folder, then replaces the save and its metadata. Each
+replacement keeps its own backup. Replacement is refused if the source `sav.dat`
+has changed on disk since it was loaded, or if the backup cannot be created.
+
+Restoring an original preset preserves that character's appearance data; switching
+to a default body still uses the bundled defaults, whose cyberarm groups are
+incomplete for 2.5. Presets do not establish that those defaults render correctly
+in game. Keep the original preset when switching body type.
 
 ### Current limitations
 
@@ -233,7 +268,7 @@ This is an initial working version and does not replace every CyberCAT feature.
 - Builds are not signed with Apple/Microsoft developer certificates or notarized.
 - Appearance editing uses internal game names, without a 3D preview or validation
   that the entered resource exists. Life path changes, preset
-  import and automatic selection of related resources are not implemented.
+  import from CyberCAT and automatic selection of related resources are not implemented.
 - Adding arbitrary weapons, clothing, cyberware and item modifiers is not included.
   Existing unique items can be inspected and their quest flags can be changed.
 - Quest fact presets cannot guarantee a story outcome for every quest state.

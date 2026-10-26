@@ -12,7 +12,10 @@ Night City Save Editor — Cyberpunk 2077 2.5
 - Поиск, изменение и добавление квестовых флагов, JSON-экспорт.
 - Выбор мужского/женского тела и голоса; смена тела сбрасывает внешность к базовому пресету.
 - Расширенное редактирование записей внешности по внутренним именам игры.
-- Отмена и повтор изменений, экспорт отдельной копии с проверкой структуры. Оригинал остаётся неизменным.
+- Сохранение и загрузка полных пресетов внешности .ncpreset; резервная копия пресета перед сменой тела.
+- Запоминание последней папки сохранения.
+- Отмена и повтор изменений, экспорт отдельной копии с проверкой структуры.
+- Замена текущего сейва с резервной копией в old — только при включении отдельной галочки.
 
 Это первая рабочая версия для формата 2.5 (saveVersion 277 / gameVersion 2500). Проверена на примере macOS 2.5 / Phantom Liberty; загрузка изменённого сохранения в самой игре и запуск Windows-сборки пока не проверены. Добавление произвольного уникального снаряжения и 3D-просмотр внешности не включены.
 
@@ -46,7 +49,10 @@ Features:
 - Search, edit and add quest facts; export facts as JSON.
 - Select male/female body and voice; changing body type resets appearance to its default preset.
 - Advanced appearance editing using internal game names.
-- Undo/redo and export to a separate copy with structural verification. The original save stays unchanged.
+- Save and load complete .ncpreset appearance presets; preset backup before changing body type.
+- Remember the last save folder.
+- Undo/redo and export to a separate copy with structural verification.
+- Optional replacement of the current save with a backup in old; off by default.
 
 This is an initial working version for the 2.5 format (saveVersion 277 / gameVersion 2500). Checked against a macOS 2.5 / Phantom Liberty example; loading an edited save in the game and running the Windows build have not yet been verified. Adding arbitrary unique equipment and a 3D appearance preview are not included.
 

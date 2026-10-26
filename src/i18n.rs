@@ -25,8 +25,14 @@ impl Language {
     }
     /// Translate an existing status again when the user changes language.
     pub fn message(self, message: &str) -> String {
-        for prefix in ["Загружено:", "Loaded:", "Копия сохранена:", "Copy saved:"]
-        {
+        for prefix in [
+            "Загружено:",
+            "Loaded:",
+            "Копия сохранена:",
+            "Copy saved:",
+            "Сохранение заменено. Резервная копия:",
+            "Save replaced. Backup:",
+        ] {
             if let Some(detail) = message.strip_prefix(prefix) {
                 return format!("{}{}", self.text(prefix), detail);
             }
@@ -35,6 +41,17 @@ impl Language {
     }
 }
 const MESSAGES:&[(&str,&str)]=&[
+    ("Все изменения сохранены", "All changes saved"),
+    ("Сохраните изменения перед продолжением.", "Save your changes before continuing."),
+    ("Сохранить пресет перед изменением тела", "Save preset before changing body"),
+    ("Сохранить пресет персонажа", "Save character preset"),
+    ("Загрузить пресет персонажа", "Load character preset"),
+    ("Пресет персонажа сохранён", "Character preset saved"),
+    ("Пресет персонажа загружен", "Character preset loaded"),
+    ("Перед сменой тела сохраните пресет. Загрузка пресета восстанавливает тело, голос и всю внешность. Отмена сохранения пресета отменяет смену тела.", "Save a preset before changing body. Loading a preset restores body, voice and all appearance settings. Cancelling the preset backup cancels the body change."),
+    ("Заменить сохранение", "Replace save"),
+    ("Заменять сейв (копия в old)", "Replace save (backup in old)"),
+    ("Сохранение заменено. Резервная копия:", "Save replaced. Backup:"),
     ("Персонаж", "Player"),
     ("Инвентарь", "Inventory"),
     ("Внешность", "Appearance"),

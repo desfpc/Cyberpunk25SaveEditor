@@ -1,4 +1,4 @@
-# Night City Save Editor 0.1.2
+# Night City Save Editor 0.1.3
 
 ## Русский
 
@@ -10,6 +10,8 @@
 По умолчанию выбран English; русский доступен в переключателе языка.
 В разделе «Внешность» доступны независимые переключатели тела и голоса; смена тела
 сбрасывает внешность к базовому пресету выбранного типа и поддерживает отмену. Поддерживается Cyberpunk 2077 2.5.
+Добавлены полные пресеты персонажа `.ncpreset`, запоминание последней папки и
+замена сейва с резервной копией в `old` (по умолчанию выключена).
 Контрольные суммы SHA-256 находятся в [SHA256SUMS.txt](SHA256SUMS.txt).
 
 Пакеты не подписаны сертификатами Apple/Microsoft и не нотарифицированы.
@@ -26,6 +28,8 @@ Ready-to-run packages; no compilation required:
 English is selected by default; Russian is available in the language selector.
 Appearance includes independent body and voice controls. Changing body type resets
 appearance to its default preset and can be undone. Cyberpunk 2077 2.5 is supported.
+Includes complete `.ncpreset` character presets, the remembered last save folder,
+and optional save replacement with backups in `old` (off by default).
 SHA-256 checksums are provided in [SHA256SUMS.txt](SHA256SUMS.txt).
 
 Packages are not signed with Apple/Microsoft developer certificates or notarized.

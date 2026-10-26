@@ -376,6 +376,84 @@ impl Save {
     }
     /// Export a complete copy. The source folder is never modified, and an existing destination is refused.
     pub fn export(&self, destination: &Path) -> Result<()> {
+        let name = destination
+            .file_name()
+            .context("No folder name")?
+            .to_string_lossy();
+        self.export_named(destination, &name)
+    }
+
+    /// Replace only the loaded save, after creating a complete, uniquely named backup.
+    pub fn replace_original(&self) -> Result<PathBuf> {
+        let source = self.source.as_ref().context("No source save selected")?;
+        ensure!(
+            source.file_name().is_some_and(|n| n == "sav.dat"),
+            "Replacement requires a sav.dat source"
+        );
+        ensure!(
+            fs::read(source)? == self.original,
+            "Source save changed on disk; reopen it before replacing"
+        );
+        let folder = source.parent().context("No source folder")?;
+        let name = folder
+            .file_name()
+            .context("No source folder name")?
+            .to_string_lossy();
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_nanos();
+        let stage = folder.join(format!(".replacement-{stamp}"));
+        self.export_named(&stage, &name)?;
+        let backup = folder.join("old").join(format!("backup-{stamp}"));
+        let result = (|| -> Result<()> {
+            fs::create_dir_all(&backup).context("Cannot create old backup folder")?;
+            for entry in fs::read_dir(folder)? {
+                let entry = entry?;
+                if entry.file_type()?.is_file() {
+                    fs::copy(entry.path(), backup.join(entry.file_name()))?;
+                }
+            }
+            ensure!(
+                fs::read(backup.join("sav.dat"))? == self.original
+                    && fs::read(source)? == self.original,
+                "Source changed while backing up; replacement cancelled"
+            );
+            let mut files = fs::read_dir(&stage)?.collect::<std::io::Result<Vec<_>>>()?;
+            // Publish the save data last. Restore all published files on any error.
+            files.sort_by_key(|e| e.file_name() == "sav.dat");
+            let mut published = Vec::new();
+            for entry in files {
+                let destination = folder.join(entry.file_name());
+                let existed = destination.exists();
+                if let Err(error) = fs::rename(entry.path(), &destination) {
+                    let mut rollback_errors = Vec::new();
+                    for (path, existed) in &published {
+                        let restored = if *existed {
+                            fs::copy(backup.join(Path::new(path).file_name().unwrap()), path)
+                                .map(|_| ())
+                        } else {
+                            fs::remove_file(path)
+                        };
+                        if let Err(e) = restored {
+                            rollback_errors.push(e.to_string());
+                        }
+                    }
+                    bail!(
+                        "Replacement failed: {error}. Backup: {}. Restore errors: {:?}",
+                        backup.display(),
+                        rollback_errors
+                    );
+                }
+                published.push((destination, existed));
+            }
+            Ok(())
+        })();
+        let _ = fs::remove_dir_all(&stage);
+        result?;
+        Ok(backup)
+    }
+
+    fn export_named(&self, destination: &Path, save_name: &str) -> Result<()> {
         ensure!(
             !destination.exists(),
             "Destination already exists; choose a new folder name"
@@ -404,7 +482,7 @@ impl Save {
             fs::write(stage.join("sav.dat"), &bytes)?;
             if let Some(mut meta) = self.metadata.clone() {
                 meta["Data"]["metadata"]["fileSize"] = bytes.len().into();
-                meta["Data"]["metadata"]["name"] = stem.to_string().into();
+                meta["Data"]["metadata"]["name"] = save_name.into();
                 fs::write(
                     stage.join("metadata.9.json"),
                     serde_json::to_vec_pretty(&meta)?,

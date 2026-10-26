@@ -5,9 +5,98 @@ use crate::{
     save::{fnv64, Save},
 };
 use anyhow::{bail, ensure, Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 const NODE: &str = "CharacetrCustomization_Appearances";
+
+/// Lossless appearance snapshot, including resources, morphs, perspectives and tags.
+#[derive(Deserialize, Serialize)]
+pub struct CharacterPreset {
+    format: String,
+    version: u32,
+    game: u32,
+    payload: Vec<u8>,
+}
+
+impl CharacterPreset {
+    pub fn read(path: &std::path::Path) -> Result<Self> {
+        ensure!(
+            std::fs::metadata(path)?.len() <= 16 * 1024 * 1024,
+            "Preset file is too large"
+        );
+        let preset: Self = serde_json::from_slice(&std::fs::read(path)?)?;
+        preset.validate()?;
+        Ok(preset)
+    }
+
+    pub fn write(&self, path: &std::path::Path) -> Result<()> {
+        use std::io::Write;
+        self.validate()?;
+        let bytes = serde_json::to_vec_pretty(self)?;
+        // Never overwrite a previous snapshot, including automatic backups.
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path)?;
+        file.write_all(&bytes)?;
+        file.sync_all()?;
+        Ok(())
+    }
+
+    fn validate(&self) -> Result<AppearanceTypes> {
+        ensure!(
+            self.format == "NightCityCharacterPreset" && self.version == 1 && self.game == 2500,
+            "Unsupported character preset format"
+        );
+        let mut r = Reader::new(&self.payload, 0);
+        ensure!(r.u8()? == 1, "No appearance preset");
+        r.u32()?;
+        ensure!(r.u32()? == 13, "Unsupported appearance version");
+        let types = AppearanceTypes {
+            body: Gender::from_flag(r.u8()?)?,
+            voice: Gender::from_flag(r.u8()?)?,
+        };
+        for _ in 0..3 {
+            let count = r.u32()?;
+            ensure!(count < 1000, "Invalid preset group count");
+            for _ in 0..count {
+                r.string()?;
+                let count = r.u32()?;
+                ensure!(count < 1000, "Invalid preset appearance count");
+                for _ in 0..count {
+                    r.u64()?;
+                    r.string()?;
+                    r.string()?;
+                    r.bytes(8)?;
+                }
+                let count = r.u32()?;
+                ensure!(count < 1000, "Invalid preset morph count");
+                for _ in 0..count {
+                    r.string()?;
+                    r.string()?;
+                    r.bytes(8)?;
+                }
+            }
+        }
+        let count = r.u32()?;
+        ensure!(count < 1000, "Invalid preset perspective count");
+        for _ in 0..count {
+            r.string()?;
+            r.string()?;
+            r.string()?;
+        }
+        let count = r.vlq()?;
+        ensure!((0..1000).contains(&count), "Invalid preset tag count");
+        for _ in 0..count {
+            r.string()?;
+        }
+        ensure!(
+            r.pos == self.payload.len(),
+            "Unexpected trailing preset data"
+        );
+        Ok(types)
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Gender {
@@ -160,6 +249,38 @@ fn default_appearance(header: &[u8], body: Gender) -> Result<Vec<u8>> {
     Ok(out)
 }
 impl Save {
+    pub fn character_preset(&self) -> Result<CharacterPreset> {
+        self.appearance_types()?;
+        let n = self.node(NODE)?;
+        let preset = CharacterPreset {
+            format: "NightCityCharacterPreset".into(),
+            version: 1,
+            game: self.game,
+            payload: self.data[n.offset + 4..n.offset + n.size].to_vec(),
+        };
+        preset.validate()?;
+        Ok(preset)
+    }
+
+    pub fn apply_character_preset(&mut self, preset: &CharacterPreset) -> Result<()> {
+        let types = preset.validate()?;
+        self.appearance_types()?;
+        let mut candidate = self.clone();
+        candidate.set_puppet_gender(types.body)?;
+        let n = candidate.node(NODE)?;
+        let mut payload = preset.payload.clone();
+        // Platform and format header belong to the destination save.
+        payload[..9].copy_from_slice(&candidate.data[n.offset + 4..n.offset + 13]);
+        candidate.replace_node(NODE, payload)?;
+        candidate.appearances()?;
+        if let Some(metadata) = &mut candidate.metadata {
+            metadata["Data"]["metadata"]["bodyGender"] = types.body.name().into();
+            metadata["Data"]["metadata"]["brainGender"] = types.voice.name().into();
+        }
+        *self = candidate;
+        Ok(())
+    }
+
     pub fn appearance_types(&self) -> Result<AppearanceTypes> {
         let n = self.node(NODE)?;
         ensure!(n.size >= 15, "Truncated appearance header");

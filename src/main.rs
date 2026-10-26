@@ -1,10 +1,11 @@
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 mod i18n;
+mod settings;
 use anyhow::{Context, Result};
 use eframe::egui::{self, Color32, RichText};
 use i18n::Language;
 use nightcity_save_editor::{
-    appearance::Gender,
+    appearance::{CharacterPreset, Gender},
     binary::{put32, u32_at},
     package::PlayerStat,
     save::{fact_hash, tdb, Appearance, Fact, Item, Save, Vehicle, STACK_RECORDS},
@@ -36,6 +37,8 @@ impl Tab {
     }
 }
 struct App {
+    settings: settings::Settings,
+    replace_save: bool,
     language: Language,
     save: Option<Save>,
     undo: Vec<Save>,
@@ -67,6 +70,8 @@ struct App {
 impl Default for App {
     fn default() -> Self {
         Self {
+            settings: settings::Settings::load(),
+            replace_save: false,
             language: Language::default(),
             save: None,
             undo: vec![],
@@ -140,6 +145,11 @@ impl App {
     fn open(&mut self, p: PathBuf) {
         match Save::load(&p) {
             Ok(s) => {
+                let directory = s
+                    .source
+                    .as_ref()
+                    .and_then(|p| p.parent())
+                    .map(PathBuf::from);
                 self.clean_data = s.data.clone();
                 self.save = Some(s);
                 self.undo.clear();
@@ -149,6 +159,17 @@ impl App {
                 self.refresh();
                 self.status = format!("Загружено: {}", p.display());
                 self.error = false;
+                self.replace_save = false;
+                if let Some(directory) = directory {
+                    if let Err(e) = self.settings.remember(&directory) {
+                        self.report(
+                            Err(e.context(
+                                "Save loaded, but the last folder could not be remembered",
+                            )),
+                            "",
+                        );
+                    }
+                }
             }
             Err(e) => self.report(Err(e), ""),
         }
@@ -178,7 +199,31 @@ impl App {
     fn export(&mut self) {
         let lang = self.language;
         let Some(s) = self.save.as_ref() else { return };
-        if let Some(parent) = rfd::FileDialog::new()
+        if self.replace_save {
+            let result = s.replace_original().and_then(|backup| {
+                let reopened = Save::load(s.source.as_ref().context("No source save")?)?;
+                Ok((backup, reopened))
+            });
+            match result {
+                Ok((backup, reopened)) => {
+                    self.clean_data = reopened.data.clone();
+                    self.save = Some(reopened);
+                    self.refresh();
+                    self.report(
+                        Ok(()),
+                        &format!(
+                            "{} {}",
+                            lang.text("Сохранение заменено. Резервная копия:"),
+                            backup.display()
+                        ),
+                    );
+                }
+                Err(e) => self.report(Err(e), ""),
+            }
+            return;
+        }
+        if let Some(parent) = self
+            .save_dialog()
             .set_title(lang.text("Папка для новой копии сохранения"))
             .pick_folder()
         {
@@ -198,6 +243,65 @@ impl App {
                 &format!("Копия сохранена: {}", destination.display()),
             );
         }
+    }
+    fn save_dialog(&self) -> rfd::FileDialog {
+        let dialog = rfd::FileDialog::new();
+        match &self.settings.last_save_directory {
+            Some(path) => dialog.set_directory(path),
+            None => dialog,
+        }
+    }
+    fn save_preset(&mut self, before_change: bool) -> bool {
+        let title = self.language.text(if before_change {
+            "Сохранить пресет перед изменением тела"
+        } else {
+            "Сохранить пресет персонажа"
+        });
+        let Some(s) = &self.save else { return false };
+        let gender = s.appearance_types().map(|t| t.body.name()).unwrap_or("V");
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let Some(path) = self
+            .save_dialog()
+            .set_title(title)
+            .add_filter("Night City character preset", &["ncpreset"])
+            .set_file_name(format!("V-{gender}-{stamp}.ncpreset"))
+            .save_file()
+        else {
+            return false;
+        };
+        let result = s.character_preset().and_then(|p| p.write(&path));
+        let ok = result.is_ok();
+        self.report(result, self.language.text("Пресет персонажа сохранён"));
+        ok
+    }
+    fn load_preset(&mut self) {
+        let Some(path) = self
+            .save_dialog()
+            .set_title(self.language.text("Загрузить пресет персонажа"))
+            .add_filter("Night City character preset", &["ncpreset"])
+            .pick_file()
+        else {
+            return;
+        };
+        let preset = match CharacterPreset::read(&path) {
+            Ok(preset) => preset,
+            Err(e) => {
+                self.report(Err(e), "");
+                return;
+            }
+        };
+        if !self.save_preset(true) {
+            return;
+        }
+        self.edit(
+            self.language.text("Пресет персонажа загружен"),
+            |s| s.apply_character_preset(&preset),
+        );
+        self.appearance_index = None;
+        self.appearance_value.clear();
     }
     fn top(&mut self, ctx: &egui::Context) {
         let lang = self.language;
@@ -222,7 +326,13 @@ impl App {
                             .add_enabled(
                                 self.save.is_some(),
                                 egui::Button::new(
-                                    RichText::new(lang.text("Экспорт копии")).color(BG).strong(),
+                                    RichText::new(lang.text(if self.replace_save {
+                                        "Заменить сохранение"
+                                    } else {
+                                        "Экспорт копии"
+                                    }))
+                                    .color(BG)
+                                    .strong(),
                                 )
                                 .fill(CYAN)
                                 .min_size(egui::vec2(145., 35.)),
@@ -235,7 +345,8 @@ impl App {
                             .add_sized([140., 35.], egui::Button::new(lang.text("Открыть sav.dat")))
                             .clicked()
                         {
-                            if let Some(p) = rfd::FileDialog::new()
+                            if let Some(p) = self
+                                .save_dialog()
                                 .set_title(lang.text("Открыть sav.dat"))
                                 .add_filter("Cyberpunk save", &["dat"])
                                 .pick_file()
@@ -310,6 +421,13 @@ impl App {
                 ui.add_space(24.);
                 ui.separator();
                 ui.add_space(15.);
+                ui.add_enabled(
+                    self.save.is_some(),
+                    egui::Checkbox::new(
+                        &mut self.replace_save,
+                        lang.text("Заменять сейв (копия в old)"),
+                    ),
+                );
                 if let Some(s) = &self.save {
                     if let Some(m) = s
                         .metadata
@@ -342,7 +460,7 @@ impl App {
                         RichText::new(if self.dirty {
                             lang.text("Есть изменения в памяти")
                         } else {
-                            lang.text("Исходный файл не изменён")
+                            lang.text("Все изменения сохранены")
                         })
                         .color(if self.dirty { YELLOW } else { CYAN }),
                     );
@@ -730,12 +848,16 @@ impl App {
                     });
                     ui.label(RichText::new(lang.text("Смена тела сбрасывает настройки внешности к базовому пресету выбранного типа. Голос выбирается независимо. Изменения можно отменить.")).small().color(MUTED));
                     if body != types.body {
-                        self.edit(
-                            lang.text("Тип тела изменён; внешность сброшена к базовому пресету"),
-                            |s| s.set_body_type(body),
-                        );
-                        self.appearance_index = None;
-                        self.appearance_value.clear();
+                        if self.save_preset(true) {
+                            self.edit(
+                                lang.text(
+                                    "Тип тела изменён; внешность сброшена к базовому пресету",
+                                ),
+                                |s| s.set_body_type(body),
+                            );
+                            self.appearance_index = None;
+                            self.appearance_value.clear();
+                        }
                     } else if voice != types.voice {
                         self.edit(lang.text("Тип голоса изменён"), |s| {
                             s.set_voice_type(voice)
@@ -747,6 +869,17 @@ impl App {
                 }
             }
         }
+        ui.horizontal(|ui| {
+            if ui.button(lang.text("Сохранить пресет персонажа")).clicked()
+            {
+                self.save_preset(false);
+            }
+            if ui.button(lang.text("Загрузить пресет персонажа")).clicked()
+            {
+                self.load_preset();
+            }
+        });
+        ui.label(RichText::new(lang.text("Перед сменой тела сохраните пресет. Загрузка пресета восстанавливает тело, голос и всю внешность. Отмена сохранения пресета отменяет смену тела.")).small().color(MUTED));
         ui.add_space(12.);
         ui.label(
             RichText::new(lang.text("Расширенное редактирование записей внешности V."))
@@ -981,15 +1114,20 @@ impl eframe::App for App {
                 .resizable(false)
                 .anchor(egui::Align2::CENTER_CENTER, [0., 0.])
                 .show(ctx, |ui| {
-                    ui.label(
-                        lang.text("Экспортируйте копию, чтобы сохранить внесённые изменения."),
-                    );
+                    ui.label(lang.text("Сохраните изменения перед продолжением."));
                     ui.horizontal(|ui| {
                         if ui.button(lang.text("Остаться")).clicked() {
                             self.pending_open = None;
                             self.confirm_close = false;
                         }
-                        if ui.button(lang.text("Экспорт копии")).clicked() {
+                        if ui
+                            .button(lang.text(if self.replace_save {
+                                "Заменить сохранение"
+                            } else {
+                                "Экспорт копии"
+                            }))
+                            .clicked()
+                        {
                             self.export();
                         }
                         if ui.button(lang.text("Отбросить изменения")).clicked() {

@@ -379,3 +379,120 @@ fn body_change_fails_atomically_when_player_persistency_is_missing() {
     assert!(s.data == before);
     assert_eq!(s.metadata, metadata);
 }
+
+fn test_folder(label: &str) -> std::path::PathBuf {
+    let path = std::env::temp_dir().join(format!(
+        "nightcity-{label}-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    std::fs::create_dir(&path).unwrap();
+    path
+}
+
+#[test]
+fn character_preset_restores_complete_appearance_after_body_change() {
+    use nightcity_save_editor::appearance::{CharacterPreset, Gender};
+    let folder = test_folder("preset");
+    let path = folder.join("female.ncpreset");
+    let mut s = sample();
+    s.set_voice_type(Gender::Male).unwrap();
+    let node = s.node("CharacetrCustomization_Appearances").unwrap();
+    let original = s.data[node.offset..node.offset + node.size].to_vec();
+    s.character_preset().unwrap().write(&path).unwrap();
+    assert!(s.character_preset().unwrap().write(&path).is_err());
+    let preset = CharacterPreset::read(&path).unwrap();
+    s.set_body_type(Gender::Male).unwrap();
+    s.set_voice_type(Gender::Female).unwrap();
+    let inventory = s.node("inventory").unwrap();
+    let inventory_bytes = s.data[inventory.offset..inventory.offset + inventory.size].to_vec();
+    s.apply_character_preset(&preset).unwrap();
+    let restored = Save::parse(s.encode().unwrap()).unwrap();
+    let node = restored.node("CharacetrCustomization_Appearances").unwrap();
+    assert_eq!(
+        &restored.data[node.offset..node.offset + node.size],
+        original
+    );
+    assert_eq!(restored.appearance_types().unwrap().voice, Gender::Male);
+    let inventory = restored.node("inventory").unwrap();
+    assert_eq!(
+        &restored.data[inventory.offset..inventory.offset + inventory.size],
+        inventory_bytes
+    );
+    let mut json: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    json["payload"].as_array_mut().unwrap().pop();
+    std::fs::write(
+        folder.join("broken.ncpreset"),
+        serde_json::to_vec(&json).unwrap(),
+    )
+    .unwrap();
+    assert!(CharacterPreset::read(&folder.join("broken.ncpreset")).is_err());
+    std::fs::remove_dir_all(folder).unwrap();
+}
+
+#[test]
+fn replacement_backs_up_current_files_and_supports_repeated_saves() {
+    let folder = test_folder("replacement");
+    let destination = folder.join("ManualSave-33");
+    sample().export(&destination).unwrap();
+    std::fs::write(destination.join("extra.txt"), b"keep me").unwrap();
+    let original = std::fs::read(destination.join("sav.dat")).unwrap();
+    let metadata = std::fs::read(destination.join("metadata.9.json")).unwrap();
+    let mut s = Save::load(&destination).unwrap();
+    s.set_fact(fact_hash("replacement_test"), 17).unwrap();
+    let backup = s.replace_original().unwrap();
+    assert!(backup.starts_with(destination.join("old")));
+    assert_eq!(std::fs::read(backup.join("sav.dat")).unwrap(), original);
+    assert_eq!(
+        std::fs::read(backup.join("metadata.9.json")).unwrap(),
+        metadata
+    );
+    assert_eq!(std::fs::read(backup.join("extra.txt")).unwrap(), b"keep me");
+    assert!(backup.join("screenshot.png").exists());
+    let mut reopened = Save::load(&destination).unwrap();
+    assert_eq!(
+        reopened.metadata.as_ref().unwrap()["Data"]["metadata"]["name"],
+        "ManualSave-33"
+    );
+    assert_eq!(
+        reopened
+            .facts()
+            .unwrap()
+            .iter()
+            .find(|f| f.hash == fact_hash("replacement_test"))
+            .unwrap()
+            .value,
+        17
+    );
+    assert!(
+        s.replace_original().is_err(),
+        "stale source must not replace newer files"
+    );
+    let current = reopened.original.clone();
+    reopened
+        .set_fact(fact_hash("replacement_test"), 18)
+        .unwrap();
+    let second = reopened.replace_original().unwrap();
+    assert_ne!(backup, second);
+    assert_eq!(std::fs::read(second.join("sav.dat")).unwrap(), current);
+    assert_eq!(std::fs::read(backup.join("sav.dat")).unwrap(), original);
+    std::fs::remove_dir_all(folder).unwrap();
+}
+
+#[test]
+fn replacement_refuses_to_write_without_a_backup() {
+    let folder = test_folder("backup-failure");
+    let destination = folder.join("ManualSave-34");
+    sample().export(&destination).unwrap();
+    let mut s = Save::load(&destination).unwrap();
+    let before = s.original.clone();
+    std::fs::write(destination.join("old"), b"blocked").unwrap();
+    s.set_fact(fact_hash("replacement_test"), 19).unwrap();
+    assert!(s.replace_original().is_err());
+    assert_eq!(std::fs::read(destination.join("sav.dat")).unwrap(), before);
+    std::fs::remove_dir_all(folder).unwrap();
+}
