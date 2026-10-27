@@ -1,4 +1,4 @@
-# Night City Save Editor 0.1.6
+# Night City Save Editor 0.1.7
 
 [Русский](#русский) · [English](#english)
 
@@ -17,7 +17,7 @@ Night City Save Editor — Cyberpunk 2077 2.5
 - Поиск, изменение и добавление квестовых флагов, JSON-экспорт.
 - Выбор мужского/женского тела и голоса; смена тела сбрасывает внешность к базовому пресету.
 - Расширенное редактирование записей внешности по внутренним именам игры.
-- Сохранение и загрузка полных пресетов внешности .ncpreset; резервная копия пресета перед сменой тела.
+- Сохранение и загрузка полных пресетов внешности .ncpreset только кнопками, без обязательного резервного пресета перед изменениями.
 - Исправление невидимых киберрук после смены пола, перенос косметических настроек имплантов.
 - Запоминание последней папки сохранения.
 - Отмена и повтор изменений, экспорт отдельной копии с проверкой структуры.
@@ -28,9 +28,9 @@ Night City Save Editor — Cyberpunk 2077 2.5
 
 Как использовать: закройте игру, откройте sav.dat, внесите изменения и нажмите «Экспорт копии». Поместите новую папку ManualSave рядом с остальными сохранениями и загрузите её в игре.
 
-### История изменений 0.1.2 → 0.1.6
+### История изменений 0.1.2 → 0.1.7
 
-Изменения за **26 октября 2026 года**. Версия 0.1.2 — исходная точка сравнения.
+Изменения за **26–27 октября 2026 года**. Версия 0.1.2 — исходная точка сравнения.
 
 #### 0.1.2 — исходная версия
 
@@ -58,7 +58,14 @@ Night City Save Editor — Cyberpunk 2077 2.5
 - Добавлена кнопка «О нас / About us» и отдельная страница, доступная без загрузки сейва: короткое описание разработчика, nozhove.com и GitHub.
 - Добавлены музыкальные проекты Čerdyn, Kasapski Nozhove, Gut Splinters и W1NTERH8 со ссылками на YouTube Music. Страница переведена на русский и английский.
 
-Для релизов обновлены Windows x64 и универсальные macOS-пакеты, версии приложений и контрольные суммы. Для 0.1.6 прошли 27 тестов и Clippy; запуск Windows-сборки пока не проверен.
+#### 0.1.7 — пресеты и очки развития (27 октября 2026)
+
+- Сохранение и загрузка пресетов выполняются только кнопками. Смена тела, загрузка пресета и ремонт киберрук больше не требуют предварительного сохранения текущего пресета.
+- Исправлена ошибка «Unsupported cosmetic value type gameItemID; preset capture cancelled»: вложенный gameItemID в косметических настройках имплантов теперь сохраняется и переносится между сейвами с корректным сопоставлением имён полей.
+- Исправлено добавление очков способностей и атрибутов в новых сейвах до первого повышения уровня или траты очков. Если поле unspent и его имя отсутствуют, редактор создаёт их при изменении; наличие spent не требуется.
+- Добавлен регрессионный тест для отсутствующих полей очков; расширена проверка переноса косметики с gameItemID.
+
+Для версии 0.1.7 обновлены Windows x64 и универсальный macOS-пакет, версии приложений и контрольные суммы. Прошли 28 тестов, проверка форматирования и Clippy. Новые исправления не проверялись в игре; запуск Windows-сборки пока не проверен.
 
 Разработал Sergei Peshalov.
 GitHub проекта: https://github.com/desfpc/Cyberpunk25SaveEditor
@@ -89,7 +96,7 @@ A native Rust save editor with a dark interface and instant Russian / English sw
 - Search, edit and add quest facts; export facts as JSON.
 - Select male/female body and voice; changing body type resets appearance to its default preset.
 - Advanced appearance editing using internal game names.
-- Save and load complete .ncpreset appearance presets; preset backup before changing body type.
+- Save and load complete .ncpreset appearance presets through buttons, without a mandatory preset backup before changes.
 - Repair invisible cyberarms after body changes and preserve cyberware cosmetic selections.
 - Remember the last save folder.
 - Undo/redo and export to a separate copy with structural verification.
@@ -100,9 +107,9 @@ This is an initial working version for the 2.5 format (saveVersion 277 / gameVer
 
 How to use: close the game, open sav.dat, make your changes and select Export copy. Place the new ManualSave folder alongside your other saves and load it in the game.
 
-### Changelog: 0.1.2 → 0.1.6
+### Changelog: 0.1.2 → 0.1.7
 
-Changes made on **October 26, 2026**. Version 0.1.2 is the comparison baseline.
+Changes made on **October 26–27, 2026**. Version 0.1.2 is the comparison baseline.
 
 #### 0.1.2 — baseline
 
@@ -130,7 +137,14 @@ Changes made on **October 26, 2026**. Version 0.1.2 is the comparison baseline.
 - Added an About us button and a separate page available before loading a save, with a short developer biography, nozhove.com and GitHub links.
 - Added YouTube Music links for Čerdyn, Kasapski Nozhove, Gut Splinters and W1NTERH8. The page supports Russian and English.
 
-Windows x64 and universal macOS packages, application versions and checksums were updated for these releases. Version 0.1.6 passed 27 tests and Clippy; the Windows build has not yet been run on Windows.
+#### 0.1.7 — presets and development points (October 27, 2026)
+
+- Presets are saved and loaded only through their buttons. Body changes, preset loading and cyberarm repair no longer require saving the current preset first.
+- Fixed “Unsupported cosmetic value type gameItemID; preset capture cancelled”: nested gameItemID values in cyberware cosmetics are now captured and transferred between saves with field names rebound correctly.
+- Fixed adding perk and attribute points to fresh saves before the first level-up or point expenditure. Missing unspent fields and name-pool entries are created when edited; spent is not required.
+- Added a regression test for omitted point fields and extended cosmetic transfer coverage for gameItemID.
+
+Version 0.1.7 updates the Windows x64 and universal macOS packages, application versions and checksums. All 28 tests, formatting checks and Clippy passed. The new fixes have not been verified in game; the Windows build has not yet been run on Windows.
 
 Developed by Sergei Peshalov.
 Project GitHub: https://github.com/desfpc/Cyberpunk25SaveEditor

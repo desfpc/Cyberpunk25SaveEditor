@@ -455,8 +455,6 @@ impl Save {
                 && (group == "Points" || value >= if group == "Attributes" { 3 } else { 1 }),
             "Value out of range"
         );
-        let mut p = Package::from_save(self, "ScriptableSystemsContainer")?;
-        let (idx, mut c) = p.player_chunk()?;
         let (array, kind, name, field, default) = match group {
             "Attributes" => (
                 "attributes",
@@ -481,6 +479,11 @@ impl Save {
             ),
             _ => anyhow::bail!("Unknown stat group"),
         };
+        let mut p = Package::from_save(self, "ScriptableSystemsContainer")?;
+        // RED omits default-valued properties. A fresh save can have neither
+        // the unspent field nor its name in the pool; add both when first edited.
+        p.ensure_names(&[field.into(), "Int32".into()])?;
+        let (idx, mut c) = p.player_chunk()?;
         let mut rows = p.array(&c.field(&p, array).context("Missing array")?.data)?;
         let row = rows
             .iter_mut()
@@ -620,5 +623,113 @@ impl Save {
         let n = self.node("StatsSystem")?;
         let absolute = n.offset + 8 + buf_offset.context("Missing buffer offset")? + found[0];
         put32(&mut self.data, absolute, (value as f32).to_bits())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fresh_points_save(remove_name: bool) -> Save {
+        let mut s = Save::load(std::path::Path::new("saveExample")).unwrap();
+        let mut p = Package::from_save(&s, "ScriptableSystemsContainer").unwrap();
+        let (index, mut player) = p.player_chunk().unwrap();
+        let mut rows = p
+            .array(&player.field(&p, "devPoints").unwrap().data)
+            .unwrap();
+        for row in &mut rows {
+            row.fields
+                .retain(|f| !matches!(p.names[f.name as usize].as_str(), "spent" | "unspent"));
+        }
+        player
+            .set(
+                &p,
+                "devPoints",
+                "array:SDevelopmentPoints",
+                Package::array_bytes(&rows),
+            )
+            .unwrap();
+        p.replace_chunk(index, player).unwrap();
+        if remove_name {
+            // Remove the name from the pool as well, preserving every existing ID.
+            let id = p.name_id("unspent").unwrap() as usize;
+            let header = if u16::from_le_bytes(p.bytes[2..4].try_into().unwrap()) == 7 {
+                16
+            } else {
+                8
+            };
+            let nd = u32_at(&p.bytes, header).unwrap() as usize;
+            let offset =
+                p.base + (u32_at(&p.bytes, p.base + nd + id * 4).unwrap() & 0xffffff) as usize;
+            p.bytes[offset..offset + 7].copy_from_slice(b"unused_");
+        }
+        p.write(&mut s, "ScriptableSystemsContainer").unwrap();
+        Save::parse(s.encode().unwrap()).unwrap()
+    }
+
+    #[test]
+    fn points_can_be_added_before_any_are_earned_or_spent() {
+        if !std::path::Path::new("saveExample/sav.dat").exists() {
+            return;
+        }
+        for remove_name in [false, true] {
+            let mut s = fresh_points_save(remove_name);
+            let before = Package::from_save(&s, "ScriptableSystemsContainer").unwrap();
+            assert_eq!(before.name_id("unspent").is_err(), remove_name);
+            let (_, player) = before.player_chunk().unwrap();
+            let before_rows = before
+                .array(&player.field(&before, "devPoints").unwrap().data)
+                .unwrap();
+            assert!(before_rows
+                .iter()
+                .all(|r| r.field(&before, "spent").is_none()
+                    && r.field(&before, "unspent").is_none()));
+            for (key, value) in [("Primary", 80), ("Attribute", 25), ("Primary", 0)] {
+                if value != 0 {
+                    assert_eq!(
+                        s.player_stats()
+                            .unwrap()
+                            .iter()
+                            .find(|r| r.group == "Points" && r.key == key)
+                            .unwrap()
+                            .value,
+                        0
+                    );
+                }
+                s.set_player_stat("Points", key, value).unwrap();
+                s = Save::parse(s.encode().unwrap()).unwrap();
+                assert_eq!(
+                    s.player_stats()
+                        .unwrap()
+                        .iter()
+                        .find(|r| r.group == "Points" && r.key == key)
+                        .unwrap()
+                        .value,
+                    value
+                );
+                let after = Package::from_save(&s, "ScriptableSystemsContainer").unwrap();
+                let (player_index, player) = after.player_chunk().unwrap();
+                let rows = after
+                    .array(&player.field(&after, "devPoints").unwrap().data)
+                    .unwrap();
+                assert_eq!(rows.len(), before_rows.len());
+                for (original, mut updated) in before_rows.iter().zip(rows) {
+                    updated
+                        .fields
+                        .retain(|f| after.names[f.name as usize] != "unspent");
+                    assert_eq!(original.encode(), updated.encode());
+                }
+                for (i, (name, start, end)) in before.chunks.iter().enumerate() {
+                    if i != player_index {
+                        let (_, a, b) = after.chunks[i];
+                        assert_eq!(
+                            &before.bytes[*start..*end],
+                            &after.bytes[a..b],
+                            "Changed unrelated chunk {name}"
+                        );
+                    }
+                }
+            }
+        }
     }
 }

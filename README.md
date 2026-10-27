@@ -12,7 +12,7 @@
 
 ### Запуск
 
-Готовая версия **0.1.6** — установка Rust и сборка не нужны:
+Готовая версия **0.1.7** — установка Rust и сборка не нужны:
 
 | Платформа | Скачать | Содержимое |
 | --- | --- | --- |
@@ -46,9 +46,9 @@
 Кнопка **О нас** открывает страницу автора с проектами и музыкой; она доступна
 и до загрузки сохранения.
 
-### История изменений 0.1.2 → 0.1.6
+### История изменений 0.1.2 → 0.1.7
 
-Изменения за **26 октября 2026 года**. Версия 0.1.2 — исходная точка сравнения.
+Изменения за **26–27 октября 2026 года**. Версия 0.1.2 — исходная точка сравнения.
 
 #### 0.1.2 — исходная версия
 
@@ -76,7 +76,14 @@
 - Добавлена кнопка «О нас / About us» и отдельная страница, доступная без загрузки сейва: короткое описание разработчика, nozhove.com и GitHub.
 - Добавлены музыкальные проекты Čerdyn, Kasapski Nozhove, Gut Splinters и W1NTERH8 со ссылками на YouTube Music. Страница переведена на русский и английский.
 
-Для релизов обновлены Windows x64 и универсальные macOS-пакеты, версии приложений и контрольные суммы. Для 0.1.6 прошли 27 тестов и Clippy; запуск Windows-сборки пока не проверен.
+#### 0.1.7 — пресеты и очки развития (27 октября 2026)
+
+- Сохранение и загрузка пресетов выполняются только кнопками. Смена тела, загрузка пресета и ремонт киберрук больше не требуют предварительного сохранения текущего пресета.
+- Исправлена ошибка «Unsupported cosmetic value type gameItemID; preset capture cancelled»: вложенный gameItemID в косметических настройках имплантов теперь сохраняется и переносится между сейвами с корректным сопоставлением имён полей.
+- Исправлено добавление очков способностей и атрибутов в новых сейвах до первого повышения уровня или траты очков. Если поле unspent и его имя отсутствуют, редактор создаёт их при изменении; наличие spent не требуется.
+- Добавлен регрессионный тест для отсутствующих полей очков; расширена проверка переноса косметики с gameItemID.
+
+Для версии 0.1.7 обновлены Windows x64 и универсальный macOS-пакет, версии приложений и контрольные суммы. Прошли 28 тестов, проверка форматирования и Clippy. Новые исправления не проверялись в игре; запуск Windows-сборки пока не проверен.
 
 ### Возможности
 
@@ -95,6 +102,9 @@
 локализованные названия игры. Каталог транспорта взят из CyberCAT; неизвестные
 уже открытые машины также показываются.
 
+Очки развития можно добавлять до первого повышения уровня и траты очков:
+отсутствующее нулевое поле `unspent` создаётся при редактировании.
+
 Изменение характеристики синхронизирует `PlayerDevelopmentData` и соответствующий
 forced modifier игрока в **новом StatsSystem 2.5** (`valuesOptimized`,
 `sharedBufferSlices`, `sharedDataBuffer`). Если модификатор отсутствует,
@@ -105,12 +115,12 @@ forced modifier игрока в **новом StatsSystem 2.5** (`valuesOptimized
 
 Смена типа тела сбрасывает внешность к базовому пресету выбранного типа и
 синхронизирует пол в `PlayerPuppetPS`. Выбранный голос сохраняется. Переключатель
-голоса меняет его независимо от тела. Перед сменой тела редактор предлагает
-сохранить текущую внешность в отдельный файл `.ncpreset`. Отмена этого диалога
-отменяет смену тела. Кнопка **Сохранить пресет персонажа** доступна и отдельно.
+голоса меняет его независимо от тела. Пресеты сохраняются в отдельный файл
+`.ncpreset` только кнопкой **Сохранить пресет персонажа**. Смена тела и ремонт
+киберрук не открывают диалог сохранения пресета.
 **Загрузить пресет персонажа** восстанавливает тело, голос и весь блок внешности:
-ресурсы киберрук, морфы, настройки камер и теги. Перед загрузкой другого пресета
-текущая внешность также сохраняется в отдельный файл. Инвентарь, установленные
+ресурсы киберрук, морфы, настройки камер и теги. Загрузка не требует
+предварительного сохранения текущей внешности. Инвентарь, установленные
 импланты, характеристики и квесты пресет не меняет. Пресет версии 2 также сохраняет
 все сериализованные поля косметической системы `CyberwareCustomizationSystem`,
 включая выбранный тип и бренд. Имена полей и значений переносятся между сейвами
@@ -227,7 +237,7 @@ Project repository: [desfpc/Cyberpunk25SaveEditor](https://github.com/desfpc/Cyb
 
 ### Getting started
 
-Download version **0.1.6** — no Rust installation or build step required:
+Download version **0.1.7** — no Rust installation or build step required:
 
 | Platform | Download | Contents |
 | --- | --- | --- |
@@ -262,9 +272,9 @@ verification does not replace checking that the edited save loads in the game.
 **About us** opens the author’s projects and music page, including before loading
 a save.
 
-### Changelog: 0.1.2 → 0.1.6
+### Changelog: 0.1.2 → 0.1.7
 
-Changes made on **October 26, 2026**. Version 0.1.2 is the comparison baseline.
+Changes made on **October 26–27, 2026**. Version 0.1.2 is the comparison baseline.
 
 #### 0.1.2 — baseline
 
@@ -292,7 +302,14 @@ Changes made on **October 26, 2026**. Version 0.1.2 is the comparison baseline.
 - Added an About us button and a separate page available before loading a save, with a short developer biography, nozhove.com and GitHub links.
 - Added YouTube Music links for Čerdyn, Kasapski Nozhove, Gut Splinters and W1NTERH8. The page supports Russian and English.
 
-Windows x64 and universal macOS packages, application versions and checksums were updated for these releases. Version 0.1.6 passed 27 tests and Clippy; the Windows build has not yet been run on Windows.
+#### 0.1.7 — presets and development points (October 27, 2026)
+
+- Presets are saved and loaded only through their buttons. Body changes, preset loading and cyberarm repair no longer require saving the current preset first.
+- Fixed “Unsupported cosmetic value type gameItemID; preset capture cancelled”: nested gameItemID values in cyberware cosmetics are now captured and transferred between saves with field names rebound correctly.
+- Fixed adding perk and attribute points to fresh saves before the first level-up or point expenditure. Missing unspent fields and name-pool entries are created when edited; spent is not required.
+- Added a regression test for omitted point fields and extended cosmetic transfer coverage for gameItemID.
+
+Version 0.1.7 updates the Windows x64 and universal macOS packages, application versions and checksums. All 28 tests, formatting checks and Clippy passed. The new fixes have not been verified in game; the Windows build has not yet been run on Windows.
 
 ### Features
 
@@ -318,13 +335,16 @@ shared with another entity, the entire edit is rejected. Unknown nodes, fields a
 bytes remain in the save. Resizing a node updates offsets and parent node sizes.
 Adding an item updates node IDs, links and inventory counts.
 
+Development points can be added before the first level-up or point expenditure.
+An omitted zero-valued `unspent` field is created when edited.
+
 Changing body type resets appearance to the selected body's default preset and
-synchronizes gender in `PlayerPuppetPS`, preserving the selected voice. Before
-changing body type, the editor asks you to save the current appearance to a new
-`.ncpreset` file; cancelling this dialog cancels the body change. You can also save
-presets manually. Loading a preset restores its body type, voice and the complete
-appearance block, including cyberarm resource groups, morphs, perspectives and tags.
-The current appearance must be backed up before loading another preset as well.
+synchronizes gender in `PlayerPuppetPS`, preserving the selected voice. Presets
+are saved to a `.ncpreset` file only with **Save character preset**. Changing body
+type and repairing cyberarms do not open the preset save dialog. Loading a preset
+restores its body type, voice and the complete appearance block, including cyberarm
+resource groups, morphs, perspectives and tags.
+Loading another preset does not require saving the current appearance first.
 Presets do not change inventory, equipped cyberware, stats or quests. Version 2
 also captures every serialized field of `CyberwareCustomizationSystem`, including
 selected type and brand. Package-local name IDs are rebound by name on import.

@@ -35,7 +35,7 @@ impl CharacterPreset {
         use std::io::Write;
         self.validate()?;
         let bytes = serde_json::to_vec_pretty(self)?;
-        // Never overwrite a previous snapshot, including automatic backups.
+        // Never overwrite a previous snapshot, when the same path is selected again.
         let mut file = std::fs::OpenOptions::new()
             .write(true)
             .create_new(true)

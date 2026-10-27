@@ -253,13 +253,9 @@ impl App {
             None => dialog,
         }
     }
-    fn save_preset(&mut self, before_change: bool) -> bool {
-        let title = self.language.text(if before_change {
-            "Сохранить текущий пресет перед изменением внешности"
-        } else {
-            "Сохранить пресет персонажа"
-        });
-        let Some(s) = &self.save else { return false };
+    fn save_preset(&mut self) {
+        let title = self.language.text("Сохранить пресет персонажа");
+        let Some(s) = &self.save else { return };
         let gender = s.appearance_types().map(|t| t.body.name()).unwrap_or("V");
         let stamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -272,12 +268,10 @@ impl App {
             .set_file_name(format!("V-{gender}-{stamp}.ncpreset"))
             .save_file()
         else {
-            return false;
+            return;
         };
         let result = s.character_preset().and_then(|p| p.write(&path));
-        let ok = result.is_ok();
         self.report(result, self.language.text("Пресет персонажа сохранён"));
-        ok
     }
     fn load_preset(&mut self) {
         let Some(path) = self
@@ -295,9 +289,6 @@ impl App {
                 return;
             }
         };
-        if !self.save_preset(true) {
-            return;
-        }
         self.edit(
             self.language.text("Пресет персонажа загружен"),
             |s| s.apply_character_preset(&preset),
@@ -851,16 +842,12 @@ impl App {
                     });
                     ui.label(RichText::new(lang.text("Смена тела сбрасывает настройки внешности к базовому пресету выбранного типа. Голос выбирается независимо. Изменения можно отменить.")).small().color(MUTED));
                     if body != types.body {
-                        if self.save_preset(true) {
-                            self.edit(
-                                lang.text(
-                                    "Тип тела изменён; внешность сброшена к базовому пресету",
-                                ),
-                                |s| s.set_body_type(body),
-                            );
-                            self.appearance_index = None;
-                            self.appearance_value.clear();
-                        }
+                        self.edit(
+                            lang.text("Тип тела изменён; внешность сброшена к базовому пресету"),
+                            |s| s.set_body_type(body),
+                        );
+                        self.appearance_index = None;
+                        self.appearance_value.clear();
                     } else if voice != types.voice {
                         self.edit(lang.text("Тип голоса изменён"), |s| {
                             s.set_voice_type(voice)
@@ -875,14 +862,13 @@ impl App {
         ui.horizontal_wrapped(|ui| {
             if ui.button(lang.text("Сохранить пресет персонажа")).clicked()
             {
-                self.save_preset(false);
+                self.save_preset();
             }
             if ui.button(lang.text("Загрузить пресет персонажа")).clicked()
             {
                 self.load_preset();
             }
-            if ui.button(lang.text("Исправить киберруки")).clicked() && self.save_preset(true)
-            {
+            if ui.button(lang.text("Исправить киберруки")).clicked() {
                 self.edit(
                     lang.text("Внешность киберрук исправлена"),
                     |s| s.repair_cyberarm_appearance(),
@@ -891,7 +877,7 @@ impl App {
                 self.appearance_value.clear();
             }
         });
-        ui.label(RichText::new(lang.text("Перед сменой тела сохраните пресет. Загрузка пресета восстанавливает тело, голос и всю внешность. Отмена сохранения пресета отменяет смену тела.")).small().color(MUTED));
+        ui.label(RichText::new(lang.text("Сохранение и загрузка пресетов выполняются кнопками. Загрузка пресета восстанавливает тело, голос и всю внешность.")).small().color(MUTED));
         ui.add_space(12.);
         ui.label(
             RichText::new(lang.text("Расширенное редактирование записей внешности V."))

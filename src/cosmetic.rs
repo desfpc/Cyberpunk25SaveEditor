@@ -44,6 +44,11 @@ fn scalar(kind: &str) -> Option<usize> {
 fn named(kind: &str) -> bool {
     kind == "CName" || kind.starts_with("gamedata")
 }
+// gameItemID is a tagged class with fields such as id and rngSeed, rather than
+// an opaque inventory ID. Its package-local field/type names must also be rebound.
+fn object(kind: &str) -> bool {
+    !kind.contains(':') && (kind.starts_with("Cyberware") || kind == "gameItemID")
+}
 impl CosmeticClass {
     fn read(p: &Package, data: &[u8], depth: usize) -> Result<Self> {
         ensure!(depth < 12, "Cosmetic data nesting is too deep");
@@ -132,7 +137,7 @@ impl CosmeticValue {
             return Ok(Self::Bytes(data.to_vec()));
         }
         ensure!(
-            !kind.contains(':') && kind.starts_with("Cyberware"),
+            object(kind),
             "Unsupported cosmetic value type {kind}; preset capture cancelled"
         );
         Ok(Self::Object(CosmeticClass::read(p, data, depth + 1)?))
@@ -158,10 +163,7 @@ impl CosmeticValue {
                 "Invalid cosmetic scalar type"
             ),
             Self::Object(value) => {
-                ensure!(
-                    kind.starts_with("Cyberware") && !kind.contains(':'),
-                    "Invalid cosmetic object type"
-                );
+                ensure!(object(kind), "Invalid cosmetic object type");
                 value.names(out, depth + 1)?;
             }
         }
@@ -231,6 +233,11 @@ mod tests {
             "CName".into(),
             "savedData".into(),
             DATA.into(),
+            "customizationItemID".into(),
+            "gameItemID".into(),
+            "id".into(),
+            "TweakDBID".into(),
+            "rngSeed".into(),
         ];
         p.ensure_names(&additions).unwrap();
         let (index, mut system) = p.chunk(SYSTEM).unwrap();
@@ -255,6 +262,23 @@ mod tests {
             123u32.to_le_bytes().to_vec(),
         )
         .unwrap();
+        let mut item = Class { fields: vec![] };
+        item.set(
+            &p,
+            "id",
+            "TweakDBID",
+            0x1fb75f37c3u64.to_le_bytes().to_vec(),
+        )
+        .unwrap();
+        item.set(
+            &p,
+            "rngSeed",
+            "Uint32",
+            1765185633u32.to_le_bytes().to_vec(),
+        )
+        .unwrap();
+        data.set(&p, "customizationItemID", "gameItemID", item.encode())
+            .unwrap();
         system.set(&p, "savedData", DATA, data.encode()).unwrap();
         p.replace_chunk(index, system).unwrap();
         p.write(&mut original, NODE).unwrap();
