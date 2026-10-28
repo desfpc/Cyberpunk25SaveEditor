@@ -8,6 +8,17 @@ use anyhow::{ensure, Result};
 use std::collections::HashMap;
 
 const NODE: &str = "CharacetrCustomization_Appearances";
+
+/// A body change can proceed with default cosmetics only after user consent.
+#[derive(Debug)]
+pub struct IncompatibleCyberwareCosmetics(pub String);
+
+impl std::fmt::Display for IncompatibleCyberwareCosmetics {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+impl std::error::Error for IncompatibleCyberwareCosmetics {}
 #[derive(Clone)]
 struct ArmAppearance {
     resource: u64,
@@ -243,15 +254,19 @@ impl Save {
         {
             for a in &mut group.appearances {
                 // Unknown gendered mod resources need an explicit mapping, never a guessed path.
-                ensure!(
-                    definitions().contains_key(&a.resource.to_string())
-                        || !(a.definition.contains("male")
-                            || a.definition.contains("Female")
-                            || a.definition.contains("Male")),
-                    "No verified gender mapping for custom cyberarm resource {}",
-                    a.resource
-                );
-                a.definition = normalize_definition(a.resource, &a.definition, body)?;
+                if !definitions().contains_key(&a.resource.to_string())
+                    && (a.definition.contains("male")
+                        || a.definition.contains("Female")
+                        || a.definition.contains("Male"))
+                {
+                    return Err(IncompatibleCyberwareCosmetics(format!(
+                        "No verified gender mapping for custom cyberarm resource {}",
+                        a.resource
+                    ))
+                    .into());
+                }
+                a.definition = normalize_definition(a.resource, &a.definition, body)
+                    .map_err(|error| IncompatibleCyberwareCosmetics(error.to_string()))?;
             }
             if let Some(existing) = target.iter_mut().find(|g| g.name == group.name) {
                 *existing = group;
@@ -337,6 +352,109 @@ mod tests {
     use super::*;
     fn sample() -> Save {
         Save::load(std::path::Path::new("saveExample")).unwrap()
+    }
+    #[test]
+    fn confirmed_cosmetic_reset_changes_body_without_touching_equipment_or_stats() {
+        use crate::package::{Class, Package};
+        if !std::path::Path::new("saveExample/sav.dat").exists() {
+            return;
+        }
+        let mut save = sample();
+        let (start, end, mut groups) = arm_groups(&save).unwrap();
+        let group = groups
+            .iter_mut()
+            .find(|g| g.name.starts_with("elemental_"))
+            .unwrap();
+        group.appearances[0].resource = 123;
+        group.appearances[0].definition = "female_unmapped_cosmetic".into();
+        let n = save.node(NODE).unwrap();
+        let payload = &save.data[n.offset + 4..n.offset + n.size];
+        let mut bytes = payload[..start].to_vec();
+        bytes.extend(encode_groups(groups));
+        bytes.extend(&payload[end..]);
+        save.replace_node(NODE, bytes).unwrap();
+        let mut p = Package::from_save(&save, "ScriptableSystemsContainer").unwrap();
+        p.ensure_names(&[
+            "savedData".into(),
+            "CyberwareCustomizationPersistentData".into(),
+            "enabled".into(),
+            "Bool".into(),
+        ])
+        .unwrap();
+        let (index, mut c) = p.chunk("CyberwareCustomizationSystem").unwrap();
+        let mut data = Class { fields: vec![] };
+        data.set(&p, "enabled", "Bool", vec![1]).unwrap();
+        c.set(
+            &p,
+            "savedData",
+            "CyberwareCustomizationPersistentData",
+            data.encode(),
+        )
+        .unwrap();
+        p.replace_chunk(index, c).unwrap();
+        p.write(&mut save, "ScriptableSystemsContainer").unwrap();
+        let original = save.clone();
+        let error = save.set_body_type(Gender::Male).unwrap_err();
+        assert!(error.is::<IncompatibleCyberwareCosmetics>());
+        assert!(
+            save.data == original.data
+                && save.nodes == original.nodes
+                && save.metadata == original.metadata
+        );
+        save.set_body_type_without_cosmetics(Gender::Male).unwrap();
+        assert_eq!(save.appearance_types().unwrap().body, Gender::Male);
+        assert_eq!(
+            save.appearance_types().unwrap().voice,
+            original.appearance_types().unwrap().voice
+        );
+        for (a, b) in original.nodes.iter().zip(&save.nodes) {
+            if a.child == u32::MAX
+                && ![NODE, "PersistencySystem2", "ScriptableSystemsContainer"]
+                    .contains(&a.name.as_str())
+            {
+                assert!(
+                    original.data[a.offset..a.offset + a.size]
+                        == save.data[b.offset..b.offset + b.size],
+                    "Changed {}",
+                    a.name
+                );
+            }
+        }
+        let before = Package::from_save(&original, "ScriptableSystemsContainer").unwrap();
+        let after = Package::from_save(&save, "ScriptableSystemsContainer").unwrap();
+        assert!(after
+            .chunk("CyberwareCustomizationSystem")
+            .unwrap()
+            .1
+            .fields
+            .is_empty());
+        for ((name, a, b), (_, c, d)) in before.chunks.iter().zip(&after.chunks) {
+            if name != "CyberwareCustomizationSystem" {
+                assert!(
+                    before.bytes[*a..*b] == after.bytes[*c..*d],
+                    "Changed {name}"
+                );
+            }
+        }
+        assert!(!arm_groups(&save)
+            .unwrap()
+            .2
+            .iter()
+            .flat_map(|g| &g.appearances)
+            .any(|a| a.resource == 123));
+        Save::parse(save.encode().unwrap()).unwrap();
+        let preset = save.character_preset().unwrap();
+        let mut destination = sample();
+        destination.apply_character_preset(&preset).unwrap();
+        let cosmetics = Package::from_save(&destination, "ScriptableSystemsContainer").unwrap();
+        assert!(cosmetics
+            .chunk("CyberwareCustomizationSystem")
+            .unwrap()
+            .1
+            .fields
+            .is_empty());
+        assert_eq!(destination.appearance_types().unwrap().body, Gender::Male);
+        save.set_body_type(Gender::Female).unwrap();
     }
     #[test]
     fn legacy_arm_repair_restores_elements_without_touching_other_appearance_or_nodes() {

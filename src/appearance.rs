@@ -257,6 +257,10 @@ pub(crate) fn default_appearance(header: &[u8], body: Gender) -> Result<Vec<u8>>
 }
 impl Save {
     pub fn character_preset(&self) -> Result<CharacterPreset> {
+        self.normalized_appearance()?.normalized_character_preset()
+    }
+
+    fn normalized_character_preset(&self) -> Result<CharacterPreset> {
         self.appearance_types()?;
         let n = self.node(NODE)?;
         let preset = CharacterPreset {
@@ -284,6 +288,7 @@ impl Save {
         if let Some(cosmetics) = &preset.cyberware_customization {
             cosmetics.apply(&mut candidate)?;
         }
+        candidate.repair_facial_cyberware()?;
         candidate.appearances()?;
         if let Some(metadata) = &mut candidate.metadata {
             metadata["Data"]["metadata"]["bodyGender"] = types.body.name().into();
@@ -322,6 +327,15 @@ impl Save {
         Ok(())
     }
     pub fn set_body_type(&mut self, body: Gender) -> Result<()> {
+        self.set_body_type_inner(body, false)
+    }
+
+    /// Explicit fallback for a user-confirmed reset of incompatible cosmetics.
+    pub fn set_body_type_without_cosmetics(&mut self, body: Gender) -> Result<()> {
+        self.set_body_type_inner(body, true)
+    }
+
+    fn set_body_type_inner(&mut self, body: Gender, reset_cosmetics: bool) -> Result<()> {
         let current = self.appearance_types()?;
         if current.body == body {
             return self.repair_cyberarm_appearance();
@@ -332,7 +346,11 @@ impl Save {
         let header = &candidate.data[n.offset + 4..n.offset + 15];
         let payload = default_appearance(header, body)?;
         candidate.replace_node(NODE, payload)?;
-        candidate.preserve_cyberarm_cosmetics(self)?;
+        if reset_cosmetics {
+            crate::cosmetic::reset(&mut candidate)?;
+        } else {
+            candidate.preserve_cyberarm_cosmetics(self)?;
+        }
         candidate.repair_cyberarm_appearance()?;
         ensure!(
             candidate.appearance_types()?

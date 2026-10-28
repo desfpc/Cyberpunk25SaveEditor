@@ -8,6 +8,17 @@ use anyhow::{ensure, Context, Result};
 use serde::{Deserialize, Serialize};
 const NODE: &str = "ScriptableSystemsContainer";
 const SYSTEM: &str = "CyberwareCustomizationSystem";
+
+/// Reset to the game's empty/default cosmetic selection. Equipment is separate.
+pub(crate) fn reset(s: &mut Save) -> Result<()> {
+    let mut p = Package::from_save(s, NODE)?;
+    if !p.chunks.iter().any(|(name, _, _)| name == SYSTEM) {
+        return Ok(());
+    }
+    let (index, _) = p.chunk(SYSTEM)?;
+    p.replace_chunk(index, Class { fields: vec![] })?;
+    p.write(s, NODE)
+}
 #[cfg(test)]
 const DATA: &str = "CyberwareCustomizationPersistentData";
 

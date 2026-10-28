@@ -7,6 +7,7 @@ use i18n::Language;
 use nightcity_save_editor::{
     appearance::{CharacterPreset, Gender},
     binary::{put32, u32_at},
+    cyberware::IncompatibleCyberwareCosmetics,
     package::PlayerStat,
     save::{fact_hash, tdb, Appearance, Fact, Item, Save, Vehicle, STACK_RECORDS},
 };
@@ -68,6 +69,7 @@ struct App {
     confirm_close: bool,
     allow_close: bool,
     cache_errors: Vec<String>,
+    pending_body_change: Option<Gender>,
 }
 impl Default for App {
     fn default() -> Self {
@@ -102,6 +104,7 @@ impl Default for App {
             confirm_close: false,
             allow_close: false,
             cache_errors: vec![],
+            pending_body_change: None,
         }
     }
 }
@@ -162,6 +165,7 @@ impl App {
                 self.status = format!("Загружено: {}", p.display());
                 self.error = false;
                 self.replace_save = false;
+                self.pending_body_change = None;
                 if let Some(directory) = directory {
                     if let Err(e) = self.settings.remember(&directory) {
                         self.report(
@@ -301,6 +305,9 @@ impl App {
         egui::TopBottomPanel::top("top")
             .exact_height(76.)
             .show(ctx, |ui| {
+                if self.pending_body_change.is_some() {
+                    ui.disable();
+                }
                 ui.horizontal_centered(|ui| {
                     ui.add_space(16.);
                     ui.vertical(|ui| {
@@ -373,6 +380,9 @@ impl App {
             .exact_width(224.)
             .resizable(false)
             .show(ctx, |ui| {
+                if self.pending_body_change.is_some() {
+                    ui.disable();
+                }
                 ui.add_space(24.);
                 ui.label(
                     RichText::new(lang.text(" РЕДАКТОР СОХРАНЕНИЯ"))
@@ -842,12 +852,7 @@ impl App {
                     });
                     ui.label(RichText::new(lang.text("Смена тела сбрасывает настройки внешности к базовому пресету выбранного типа. Голос выбирается независимо. Изменения можно отменить.")).small().color(MUTED));
                     if body != types.body {
-                        self.edit(
-                            lang.text("Тип тела изменён; внешность сброшена к базовому пресету"),
-                            |s| s.set_body_type(body),
-                        );
-                        self.appearance_index = None;
-                        self.appearance_value.clear();
+                        self.request_body_change(body);
                     } else if voice != types.voice {
                         self.edit(lang.text("Тип голоса изменён"), |s| {
                             s.set_voice_type(voice)
@@ -930,6 +935,42 @@ impl App {
                 }
             });
     }
+    fn request_body_change(&mut self, body: Gender) {
+        let Some(mut candidate) = self.save.clone() else {
+            return;
+        };
+        match candidate.set_body_type(body) {
+            Ok(()) => {
+                self.edit(
+                    self.language
+                        .text("Тип тела изменён; внешность сброшена к базовому пресету"),
+                    |s| {
+                        *s = candidate;
+                        Ok(())
+                    },
+                );
+                self.appearance_index = None;
+                self.appearance_value.clear();
+            }
+            Err(error) if error.is::<IncompatibleCyberwareCosmetics>() => {
+                self.pending_body_change = Some(body);
+            }
+            Err(error) => self.report(Err(error), ""),
+        }
+    }
+
+    fn confirm_body_change(&mut self, confirmed: bool) {
+        if let Some(body) = self.pending_body_change.take().filter(|_| confirmed) {
+            self.edit(
+                self.language
+                    .text("Тип тела изменён; косметика имплантов сброшена"),
+                |s| s.set_body_type_without_cosmetics(body),
+            );
+            self.appearance_index = None;
+            self.appearance_value.clear();
+        }
+    }
+
     fn tools(&mut self, ui: &mut egui::Ui) {
         let lang = self.language;
         if let Some(s) = &self.save {
@@ -1051,6 +1092,9 @@ impl eframe::App for App {
                 });
             });
         egui::CentralPanel::default().show(ctx, |ui| {
+            if self.pending_body_change.is_some() {
+                ui.disable();
+            }
             ui.add_space(16.);
             ui.horizontal(|ui| {
                 ui.heading(RichText::new(self.tab.title(lang)).size(28.));
@@ -1132,7 +1176,8 @@ impl eframe::App for App {
                 }
             }
         });
-        if self.pending_open.is_some() || self.confirm_close {
+        if self.pending_body_change.is_none() && (self.pending_open.is_some() || self.confirm_close)
+        {
             egui::Window::new(lang.text("Изменения не экспортированы"))
                 .id(egui::Id::new("unsaved_changes"))
                 .collapsible(false)
@@ -1166,6 +1211,35 @@ impl eframe::App for App {
                         }
                     });
                 });
+        }
+        if self.pending_body_change.is_some() {
+            let mut open = true;
+            let mut decision = None;
+            egui::Window::new(lang.text("Сбросить косметику имплантов?"))
+                .id(egui::Id::new("body_cosmetic_reset"))
+                .open(&mut open)
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0., 0.])
+                .show(ctx, |ui| {
+                    ui.set_max_width(480.);
+                    ui.label(lang.text("Для выбранной косметики имплантов нет проверенного варианта другого тела. Можно продолжить со стандартной косметикой. Текущие цвета, бренд и другие косметические настройки имплантов будут сброшены. Установленные импланты и их характеристики сохранятся. Изменение можно отменить."));
+                    ui.add_space(12.);
+                    ui.horizontal_wrapped(|ui| {
+                        if ui.button(lang.text("Отмена")).clicked() {
+                            decision = Some(false);
+                        }
+                        if ui.button(lang.text("Сменить тело и сбросить косметику")).clicked() {
+                            decision = Some(true);
+                        }
+                    });
+                });
+            if !open || ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+                decision = Some(false);
+            }
+            if let Some(confirmed) = decision {
+                self.confirm_body_change(confirmed);
+            }
         }
     }
 }
@@ -1245,4 +1319,71 @@ fn main() -> Result<()> {
         }),
     )
     .map_err(|e| anyhow::anyhow!("{e}"))
+}
+
+#[cfg(test)]
+mod body_change_tests {
+    use super::*;
+    fn incompatible_save() -> Save {
+        let mut s = Save::load(std::path::Path::new("saveExample")).unwrap();
+        let (index, row) = s
+            .appearances()
+            .unwrap()
+            .into_iter()
+            .enumerate()
+            .find(|(_, a)| a.group.starts_with("Arms / elemental_"))
+            .unwrap();
+        s.data[row.start - 8..row.start].copy_from_slice(&123u64.to_le_bytes());
+        s.set_appearance(index, "female_unmapped_cosmetic").unwrap();
+        s
+    }
+    #[test]
+    fn incompatible_body_change_requires_consent_and_can_be_cancelled_or_undone() {
+        if !std::path::Path::new("saveExample/sav.dat").exists() {
+            return;
+        }
+        let original = incompatible_save();
+        let mut app = App {
+            save: Some(original.clone()),
+            ..App::default()
+        };
+        app.request_body_change(Gender::Male);
+        assert_eq!(app.pending_body_change, Some(Gender::Male));
+        assert!(app.save.as_ref().unwrap().data == original.data);
+        assert!(app.undo.is_empty());
+        app.confirm_body_change(false);
+        assert!(app.pending_body_change.is_none());
+        assert!(app.save.as_ref().unwrap().data == original.data);
+        assert!(app.undo.is_empty());
+        app.request_body_change(Gender::Male);
+        app.confirm_body_change(true);
+        assert!(app.pending_body_change.is_none());
+        assert!(!app.error);
+        assert!(app.dirty);
+        assert_eq!(
+            app.save.as_ref().unwrap().appearance_types().unwrap().body,
+            Gender::Male
+        );
+        assert_eq!(app.undo.len(), 1);
+        assert!(app.undo.pop().unwrap().data == original.data);
+    }
+    #[test]
+    fn structural_errors_do_not_offer_a_cosmetic_reset() {
+        if !std::path::Path::new("saveExample/sav.dat").exists() {
+            return;
+        }
+        let mut original = incompatible_save();
+        let n = original.node("PersistencySystem2").unwrap();
+        let at = n.offset + 4;
+        original.data[at..at + 4].copy_from_slice(&u32::MAX.to_le_bytes());
+        let mut app = App {
+            save: Some(original.clone()),
+            ..App::default()
+        };
+        app.request_body_change(Gender::Male);
+        assert!(app.pending_body_change.is_none());
+        assert!(app.error);
+        assert!(app.save.as_ref().unwrap().data == original.data);
+        assert!(app.undo.is_empty());
+    }
 }

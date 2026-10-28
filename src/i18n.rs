@@ -41,6 +41,11 @@ impl Language {
     }
 }
 const MESSAGES:&[(&str,&str)]=&[
+    ("Сбросить косметику имплантов?", "Reset cyberware cosmetics?"),
+    ("Для выбранной косметики имплантов нет проверенного варианта другого тела. Можно продолжить со стандартной косметикой. Текущие цвета, бренд и другие косметические настройки имплантов будут сброшены. Установленные импланты и их характеристики сохранятся. Изменение можно отменить.", "The selected cyberware cosmetics have no verified counterpart for the other body. You can continue with default cosmetics. Current colors, brand and other cyberware cosmetic settings will be reset. Installed cyberware and its stats will be retained. You can undo this change."),
+    ("Отмена", "Cancel"),
+    ("Сменить тело и сбросить косметику", "Change body and reset cosmetics"),
+    ("Тип тела изменён; косметика имплантов сброшена", "Body changed; cyberware cosmetics reset"),
     ("О нас", "About us"),
     ("Я разработчик из Лимасола, Кипр. Создаю веб-сервисы и инструменты на PHP и Go, развиваю проекты с открытым исходным кодом. В свободное время занимаюсь музыкой.", "I'm a developer based in Limassol, Cyprus. I build web services and tools with PHP and Go, and work on open-source projects. In my spare time, I make music."),
     ("Мои проекты", "My projects"),

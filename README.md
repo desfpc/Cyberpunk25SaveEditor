@@ -12,7 +12,7 @@
 
 ### Запуск
 
-Готовая версия **0.1.7** — установка Rust и сборка не нужны:
+Готовая версия **0.1.8** — установка Rust и сборка не нужны:
 
 | Платформа | Скачать | Содержимое |
 | --- | --- | --- |
@@ -46,9 +46,9 @@
 Кнопка **О нас** открывает страницу автора с проектами и музыкой; она доступна
 и до загрузки сохранения.
 
-### История изменений 0.1.2 → 0.1.7
+### История изменений 0.1.2 → 0.1.8
 
-Изменения за **26–27 октября 2026 года**. Версия 0.1.2 — исходная точка сравнения.
+Изменения за **26–28 октября 2026 года**. Версия 0.1.2 — исходная точка сравнения.
 
 #### 0.1.2 — исходная версия
 
@@ -84,6 +84,14 @@
 - Добавлен регрессионный тест для отсутствующих полей очков; расширена проверка переноса косметики с gameItemID.
 
 Для версии 0.1.7 обновлены Windows x64 и универсальный macOS-пакет, версии приложений и контрольные суммы. Прошли 28 тестов, проверка форматирования и Clippy. Новые исправления не проверялись в игре; запуск Windows-сборки пока не проверен.
+
+#### 0.1.8 — лицевые киберимпланты и смена тела (28 октября 2026)
+
+- Исправлено исчезновение пункта лицевых киберимплантов у рипера: проблемный женский вариант `cyberware_01` автоматически заменяется на `cyberware_15` с согласованными записями головы и сохранением соответствующего тона кожи.
+- Исправление применяется при экспорте и замене сейва, создании и загрузке пресетов, включая версии 1 и 2. Исправление лицевых имплантов не требует дополнительных действий. Встроенный женский пресет также обновлён.
+- Уже выбранные рабочие варианты сохраняются. Отдельная косметика киберрук, экипировка и игровые характеристики не сбрасываются.
+- Если косметике имплантов не найден проверенный вариант для другого тела, редактор предлагает отменить смену тела или продолжить со сбросом косметики к стандартной. Подтверждение сбрасывает цвета, бренд и косметические настройки, сохраняя установленные импланты, оружие и характеристики. Доступна отмена через Undo. Другие ошибки сейва этим подтверждением не обходятся.
+- Пользователь подтвердил восстановление пункта на диагностической копии и предоставил сейв после выбора нового варианта в игре. Автоматическая миграция воспроизводит проверенный диагностический сейв байт в байт. Прошли 40 тестов, форматирование и Clippy; Windows-сборка не проверялась запуском на Windows.
 
 ### Возможности
 
@@ -137,7 +145,7 @@ forced modifier игрока в **новом StatsSystem 2.5** (`valuesOptimized
 старого пресета версии 1 тоже исправляет известные ссылки рук, сохраняя текущие
 отдельные косметические настройки, которых в старом файле ещё не было.
 Неизвестный гендерный вариант модифицированных ресурсов не подменяется догадкой:
-операция отклоняется, если для него нельзя проверить соответствие.
+при смене тела можно подтвердить сброс косметики к стандартной либо отменить операцию.
 
 Последняя успешно открытая папка сейва запоминается между запусками. Переключатель
 **Заменять сейв (копия в old)** по умолчанию выключен и сбрасывается при открытии
@@ -237,7 +245,7 @@ Project repository: [desfpc/Cyberpunk25SaveEditor](https://github.com/desfpc/Cyb
 
 ### Getting started
 
-Download version **0.1.7** — no Rust installation or build step required:
+Download version **0.1.8** — no Rust installation or build step required:
 
 | Platform | Download | Contents |
 | --- | --- | --- |
@@ -272,9 +280,9 @@ verification does not replace checking that the edited save loads in the game.
 **About us** opens the author’s projects and music page, including before loading
 a save.
 
-### Changelog: 0.1.2 → 0.1.7
+### Changelog: 0.1.2 → 0.1.8
 
-Changes made on **October 26–27, 2026**. Version 0.1.2 is the comparison baseline.
+Changes made on **October 26–28, 2026**. Version 0.1.2 is the comparison baseline.
 
 #### 0.1.2 — baseline
 
@@ -310,6 +318,14 @@ Changes made on **October 26–27, 2026**. Version 0.1.2 is the comparison basel
 - Added a regression test for omitted point fields and extended cosmetic transfer coverage for gameItemID.
 
 Version 0.1.7 updates the Windows x64 and universal macOS packages, application versions and checksums. All 28 tests, formatting checks and Clippy passed. The new fixes have not been verified in game; the Windows build has not yet been run on Windows.
+
+#### 0.1.8 — facial cyberware and body changes (October 28, 2026)
+
+- Fixed the missing facial-cyberware option at ripperdocs: the affected female `cyberware_01` selection is automatically replaced with `cyberware_15`, keeping head entries consistent and retaining the corresponding skin tone.
+- Applied during save export/replacement and preset capture/loading, including version 1 and 2 presets. Facial-cyberware repair requires no extra steps. The bundled female preset is updated too.
+- Existing working selections are retained. Separate cyberarm cosmetics, equipment and gameplay stats are preserved.
+- If cyberware cosmetics have no verified counterpart for the other body, a warning offers Cancel or a body change with default cosmetics. Confirmation resets colors, brand and cosmetic settings while retaining installed cyberware, weapons and stats. Undo restores the prior state. This confirmation does not bypass other save errors.
+- The user confirmed the restored control in a diagnostic save and supplied a subsequent in-game save with a new selection. Automatic migration reproduces the game-tested diagnostic save byte for byte. All 40 tests, formatting and Clippy passed; the Windows build has not been run on Windows.
 
 ### Features
 
@@ -368,8 +384,7 @@ legacy combined groups as well, addressing disappearance after an appearance ref
 **Repair cyberarm appearance** fixes these known errors in existing saves without
 resetting the face, body, voice or equipment. Importing a version 1 preset also
 repairs known arm references while retaining the destination's separate cosmetic
-settings, which older presets did not capture. Unknown gendered mod resources
-without verified counterparts are rejected instead of being guessed.
+settings, which older presets did not capture. When cyberware cosmetics have no verified counterpart for a body change, the editor asks whether to cancel or use default cosmetics. Confirming resets cosmetic settings while retaining equipment and stats; Undo restores the previous state. Other save errors still stop the operation.
 In-game rendering still needs to be checked after loading the repaired save.
 
 ### Current limitations

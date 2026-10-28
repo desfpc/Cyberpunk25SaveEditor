@@ -333,6 +333,9 @@ impl Save {
         Ok(out)
     }
     pub fn encode(&self) -> Result<Vec<u8>> {
+        self.normalized_appearance()?.encode_normalized()
+    }
+    pub(crate) fn encode_normalized(&self) -> Result<Vec<u8>> {
         let original = Self::parse(self.original.clone())?;
         if self.data == original.data && self.nodes == original.nodes {
             return Ok(self.original.clone());
@@ -454,11 +457,16 @@ impl Save {
     }
 
     fn export_named(&self, destination: &Path, save_name: &str) -> Result<()> {
+        self.normalized_appearance()?
+            .export_normalized(destination, save_name)
+    }
+
+    fn export_normalized(&self, destination: &Path, save_name: &str) -> Result<()> {
         ensure!(
             !destination.exists(),
             "Destination already exists; choose a new folder name"
         );
-        let bytes = self.encode()?;
+        let bytes = self.encode_normalized()?;
         let parent = destination.parent().context("No parent folder")?;
         let stem = destination
             .file_name()

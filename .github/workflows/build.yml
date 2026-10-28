@@ -26,9 +26,9 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - name: Unit and translation tests
         run: cargo test --locked --lib --bins
-      - name: Real-save integration tests (optional local fixture)
+      - name: Real-save and data integrity tests (optional local fixture)
         if: ${{ hashFiles('saveExample/sav.dat') != '' }}
-        run: cargo test --locked --test real_save
+        run: cargo test --locked --test real_save --test data_integrity
       - run: cargo build --release --locked --target ${{ matrix.target }}
       - run: python scripts/collect_licenses.py
       - name: Package macOS app
