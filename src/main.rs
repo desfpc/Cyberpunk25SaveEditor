@@ -8,6 +8,7 @@ use nightcity_save_editor::{
     appearance::{CharacterPreset, Gender},
     binary::{put32, u32_at},
     cyberware::IncompatibleCyberwareCosmetics,
+    item_catalog::{self, ItemCategory, ItemFilter},
     package::PlayerStat,
     save::{fact_hash, tdb, Appearance, Fact, Item, Save, Vehicle, STACK_RECORDS},
 };
@@ -48,6 +49,7 @@ struct App {
     redo: Vec<Save>,
     tab: Tab,
     search: String,
+    item_filter: ItemFilter,
     status: String,
     error: bool,
     facts: Vec<Fact>,
@@ -82,6 +84,7 @@ impl Default for App {
             redo: vec![],
             tab: Tab::Player,
             search: String::new(),
+            item_filter: ItemFilter::default(),
             status: "Выберите sav.dat или откройте пример сохранения".into(),
             error: false,
             facts: vec![],
@@ -509,6 +512,12 @@ impl App {
                             .size(11.)
                             .color(CYAN),
                         );
+                        if group == "Progression"
+                            && self.stats.iter().any(PlayerStat::exceeds_game_limit)
+                        {
+                            ui.add_space(10.);
+                            ui.label(RichText::new(lang.text("Этот уровень превышает стандартный лимит игры. Используйте его только с модом, который повышает соответствующий лимит.")).small().color(YELLOW));
+                        }
                         ui.add_space(18.);
                         for row in self
                             .stats
@@ -529,7 +538,7 @@ impl App {
                                                 } else {
                                                     1
                                                 }
-                                                    ..=row.max,
+                                                    ..=row.edit_max(),
                                             )
                                             .speed(0.15),
                                     )
@@ -537,7 +546,12 @@ impl App {
                                 {
                                     change = Some((group.to_owned(), row.key.clone(), v));
                                 }
-                                ui.label(RichText::new(format!("/ {}", row.max)).color(MUTED));
+                                let limit = if group == "Progression" {
+                                    format!("{} {}", lang.text("Лимит игры:"), row.max)
+                                } else {
+                                    format!("/ {}", row.max)
+                                };
+                                ui.label(RichText::new(limit).color(MUTED));
                             });
                             ui.add_space(16.);
                         }
@@ -574,7 +588,35 @@ impl App {
                 });
             ui.add_space(16.);
             ui.label(RichText::new(lang.text("Поиск")).color(MUTED));
-            ui.text_edit_singleline(&mut self.search);
+            ui.add(
+                egui::TextEdit::singleline(&mut self.item_filter.search)
+                    .hint_text(lang.text("Название или ID")),
+            );
+            if ui.button(lang.text("Сбросить фильтры")).clicked() {
+                self.item_filter = ItemFilter::default();
+            }
+        });
+        ui.horizontal_wrapped(|ui| {
+            egui::ComboBox::from_id_salt("item_category")
+                .width(230.)
+                .selected_text(lang.text(self.item_filter.category.label()))
+                .show_ui(ui, |ui| {
+                    for category in ItemCategory::ALL {
+                        ui.selectable_value(
+                            &mut self.item_filter.category,
+                            category,
+                            lang.text(category.label()),
+                        );
+                    }
+                });
+            ui.checkbox(
+                &mut self.item_filter.iconic_only,
+                lang.text("Только культовое"),
+            );
+            ui.checkbox(
+                &mut self.item_filter.quest_only,
+                lang.text("Только квестовые"),
+            );
         });
         ui.add_space(12.);
         let money = self
@@ -602,10 +644,10 @@ impl App {
         ui.horizontal(|ui| {
             egui::ComboBox::from_id_salt("stack")
                 .width(230.)
-                .selected_text(STACK_RECORDS[self.stack])
+                .selected_text(item_catalog::label(tdb(STACK_RECORDS[self.stack])))
                 .show_ui(ui, |ui| {
                     for (i, r) in STACK_RECORDS.iter().enumerate() {
-                        ui.selectable_value(&mut self.stack, i, *r);
+                        ui.selectable_value(&mut self.stack, i, item_catalog::label(tdb(r)));
                     }
                 });
             ui.add(egui::DragValue::new(&mut self.stack_qty).range(1..=999999999));
@@ -619,59 +661,145 @@ impl App {
         });
         ui.label(RichText::new(lang.text("Добавление: деньги, компоненты и боеприпасы. Неизвестные предметы показаны по TDBID.")).small().color(MUTED));
         ui.add_space(15.);
-        let filter = self.search.to_lowercase();
-        let rows: Vec<_> = self
+        let total = self
             .items
             .iter()
-            .filter(|i| i.inventory == self.inventory && i.name.to_lowercase().contains(&filter))
+            .filter(|item| item.inventory == self.inventory)
+            .count();
+        let mut rows: Vec<_> = self
+            .items
+            .iter()
+            .filter(|item| item.inventory == self.inventory)
+            .filter(|item| {
+                self.item_filter.matches(
+                    item.id,
+                    self.save.as_ref().unwrap().data[item.flags] & 1 != 0,
+                )
+            })
             .cloned()
             .collect();
-        ui.label(format!("{} {}", rows.len(), lang.text("предметов")));
+        rows.sort_by_cached_key(|item| {
+            (
+                item_catalog::get(item.id)
+                    .map_or(item.name.as_str(), |entry| entry.title())
+                    .to_lowercase(),
+                item.id,
+                item.offset,
+            )
+        });
+        ui.label(format!(
+            "{} / {} {}",
+            rows.len(),
+            total,
+            lang.text("предметов")
+        ));
+        if rows.is_empty() {
+            ui.label(lang.text("Нет предметов, соответствующих фильтрам"));
+        }
         let mut quantity = None;
         let mut flag = None;
-        let name_width = (ui.available_width() - 280.).clamp(180., 560.);
-        egui::ScrollArea::vertical()
-            .id_salt("items")
-            .show(ui, |ui| {
-                egui::Grid::new("items_grid")
-                    .num_columns(3)
-                    .striped(true)
-                    .min_col_width(110.)
-                    .spacing([20., 8.])
-                    .show(ui, |ui| {
-                        ui.strong(lang.text("Предмет / TDBID"));
-                        ui.strong(lang.text("Количество"));
-                        ui.strong(lang.text("Квестовый"));
-                        ui.end_row();
-                        for item in rows {
-                            ui.add_sized(
-                                [name_width, 22.],
-                                egui::Label::new(&item.name).truncate(),
-                            )
-                            .on_hover_text(format!(
-                                "ID {:010X} · node @ {:X}",
-                                item.id, item.offset
-                            ));
-                            if let Some(p) = item.quantity {
-                                let mut v =
-                                    u32_at(&self.save.as_ref().unwrap().data, p).unwrap_or(1);
-                                if ui
-                                    .add(egui::DragValue::new(&mut v).range(1..=999999999))
-                                    .changed()
-                                {
-                                    quantity = Some((p, v));
+        let name_width = (ui.available_width() - 290.).max(180.);
+        let row_height = ui
+            .spacing()
+            .interact_size
+            .y
+            .max(
+                ui.text_style_height(&egui::TextStyle::Button) + 2. * ui.spacing().button_padding.y,
+            )
+            .max(28.);
+        ui.horizontal(|ui| {
+            for (width, title) in [(name_width, "Предмет / ID"), (130., "Количество")]
+            {
+                ui.allocate_ui_with_layout(
+                    egui::vec2(width, 24.),
+                    egui::Layout::left_to_right(egui::Align::Center),
+                    |ui| {
+                        ui.set_width(width);
+                        ui.label(RichText::new(lang.text(title)).strong());
+                    },
+                );
+            }
+            ui.label(RichText::new(lang.text("Квестовый")).strong());
+        });
+        egui::ScrollArea::vertical().id_salt("items").show_rows(
+            ui,
+            row_height,
+            rows.len(),
+            |ui, range| {
+                for index in range {
+                    let item = &rows[index];
+                    ui.push_id(item.offset, |ui| {
+                        ui.horizontal(|ui| {
+                            let entry = item_catalog::get(item.id);
+                            let category =
+                                entry.map_or(ItemCategory::Unknown, |entry| entry.category);
+                            let label = item_catalog::label(item.id);
+                            let mut details = format!(
+                                "{label}\n{}\nTDBID {:010X}",
+                                lang.text(category.label()),
+                                item.id
+                            );
+                            if let Some(entry) = entry {
+                                if !entry.kind.is_empty() {
+                                    details.push_str(&format!("\n{}", entry.kind));
                                 }
-                            } else {
-                                ui.label(RichText::new(lang.text("Уникальный")).color(MUTED));
+                                if entry.iconic {
+                                    details.push_str(&format!("\n{}", lang.text("Культовое")));
+                                }
                             }
+                            let color = if entry.is_some_and(|entry| entry.iconic) {
+                                YELLOW
+                            } else {
+                                ui.visuals().text_color()
+                            };
+                            ui.allocate_ui_with_layout(
+                                egui::vec2(name_width, row_height),
+                                egui::Layout::left_to_right(egui::Align::Center),
+                                |ui| {
+                                    ui.set_width(name_width);
+                                    ui.set_height(row_height);
+                                    ui.add(
+                                        egui::Label::new(RichText::new(label).color(color))
+                                            .truncate(),
+                                    )
+                                    .on_hover_text(details);
+                                },
+                            );
+                            ui.allocate_ui_with_layout(
+                                egui::vec2(130., row_height),
+                                egui::Layout::left_to_right(egui::Align::Center),
+                                |ui| {
+                                    ui.set_width(130.);
+                                    ui.set_height(row_height);
+                                    if let Some(p) = item.quantity {
+                                        let mut value =
+                                            u32_at(&self.save.as_ref().unwrap().data, p)
+                                                .unwrap_or(1);
+                                        if ui
+                                            .add(
+                                                egui::DragValue::new(&mut value)
+                                                    .range(1..=999999999),
+                                            )
+                                            .changed()
+                                        {
+                                            quantity = Some((p, value));
+                                        }
+                                    } else {
+                                        ui.label(
+                                            RichText::new(lang.text("Уникальный")).color(MUTED),
+                                        );
+                                    }
+                                },
+                            );
                             let mut quest = self.save.as_ref().unwrap().data[item.flags] & 1 != 0;
                             if ui.checkbox(&mut quest, "").changed() {
                                 flag = Some((item.flags, quest));
                             }
-                            ui.end_row();
-                        }
+                        });
                     });
-            });
+                }
+            },
+        );
         if let Some((p, v)) = quantity {
             self.edit(lang.text("Количество изменено"), |s| {
                 put32(&mut s.data, p, v)
@@ -1319,6 +1447,63 @@ fn main() -> Result<()> {
         }),
     )
     .map_err(|e| anyhow::anyhow!("{e}"))
+}
+
+#[cfg(test)]
+mod inventory_tests {
+    use super::*;
+
+    #[test]
+    fn browsing_and_combining_filters_never_changes_save_data() {
+        let save = Save::load(std::path::Path::new("saveExample")).unwrap();
+        let data = save.data.clone();
+        let mut app = App {
+            clean_data: data.clone(),
+            save: Some(save),
+            ..Default::default()
+        };
+        app.refresh();
+        let named = app
+            .items
+            .iter()
+            .filter(|item| item_catalog::get(item.id).is_some_and(|entry| entry.name.is_some()))
+            .count();
+        println!(
+            "English names: {named}/{} fixture inventory entries",
+            app.items.len()
+        );
+        assert!(named > app.items.len() / 2);
+        let ctx = egui::Context::default();
+        for language in [Language::English, Language::Russian] {
+            app.language = language;
+            for category in ItemCategory::ALL {
+                assert_ne!(Language::English.text(category.label()), category.label());
+                app.item_filter = ItemFilter {
+                    category,
+                    ..Default::default()
+                };
+                for search in ["", "Kongou", "Preset", "not-a-real-item"] {
+                    app.item_filter.search = search.into();
+                    let _ = ctx.run(
+                        egui::RawInput {
+                            screen_rect: Some(egui::Rect::from_min_size(
+                                egui::Pos2::ZERO,
+                                egui::vec2(1100., 760.),
+                            )),
+                            ..Default::default()
+                        },
+                        |ctx| {
+                            egui::CentralPanel::default().show(ctx, |ui| app.inventory(ui));
+                        },
+                    );
+                }
+            }
+        }
+        assert_eq!(app.save.as_ref().unwrap().data, data);
+        assert!(!app.dirty);
+        assert!(app.undo.is_empty());
+        assert!(app.redo.is_empty());
+    }
 }
 
 #[cfg(test)]

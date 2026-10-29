@@ -12,7 +12,7 @@
 
 ### Запуск
 
-Готовая версия **0.1.8** — установка Rust и сборка не нужны:
+Готовая версия **0.1.9** — установка Rust и сборка не нужны:
 
 | Платформа | Скачать | Содержимое |
 | --- | --- | --- |
@@ -46,68 +46,72 @@
 Кнопка **О нас** открывает страницу автора с проектами и музыкой; она доступна
 и до загрузки сохранения.
 
-### История изменений 0.1.2 → 0.1.8
+### История изменений: 0.1.9 → 0.1.2
 
-Изменения за **26–28 октября 2026 года**. Версия 0.1.2 — исходная точка сравнения.
+#### 0.1.9 — удобный инвентарь и уровни для модифицированной игры (29 октября 2026)
 
-#### 0.1.2 — исходная версия
-
-- Независимый выбор тела и голоса, русский и английский интерфейс с английским по умолчанию, отмена/повтор и экспорт отдельной копии сохранения.
-
-#### 0.1.3 — пресеты и сохранение файлов
-
-- Добавлены файлы `.ncpreset`: сохраняются тело, голос и полный блок внешности — ресурсы, морфы, группы рук, настройки камер и теги. Перед сменой тела или загрузкой другого пресета предлагается сохранить текущую внешность; отмена диалога отменяет изменение.
-- Последняя успешно открытая папка сейва запоминается между запусками.
-- Добавлена замена текущего сейва с отдельной резервной копией в `old/backup-…`. Переключатель по умолчанию выключен и сбрасывается при открытии сейва. Запись проверяется повторным чтением; замена отклоняется, если резервную копию создать нельзя или исходный файл изменился на диске.
-
-#### 0.1.4 — исправление ресурсов киберрук
-
-- Исправлены устаревшие имена внешности Gorilla Arms, Mantis Blades и Monowire; восстановлены 16 элементальных групп для четырёх типов киберрук, включая Projectile Launcher.
-- Добавлены подбор проверенных мужских/женских вариантов и кнопка «Исправить киберруки» для существующих сейвов.
-- Пресеты версии 2 сохраняют отдельные косметические настройки имплантов (`CyberwareCustomizationSystem`) и поддерживают перенос между сейвами. Старые пресеты версии 1 остаются совместимыми; инвентарь, установленные импланты, характеристики и квесты не заменяются содержимым пресета.
-
-#### 0.1.5 — исправление повторного исчезновения рук
-
-- По исходному мужскому сейву обновлена структура: 34 группы рук, отдельные слоты FPP/TPP и 5 связей переключения камер. Ремонт переводит старые объединённые группы в эту структуру, устраняя причину повторного исчезновения рук при обновлении внешности имплантов в игре.
-- Ремонт сохраняет выбранные цвета и косметику, лицо, тело, голос и экипировку. Пользователь подтвердил в игре работу мужских рук после обновления внешности и восстановление женской внешности с руками из пресета.
-
-#### 0.1.6 — страница автора
-
-- Добавлена кнопка «О нас / About us» и отдельная страница, доступная без загрузки сейва: короткое описание разработчика, nozhove.com и GitHub.
-- Добавлены музыкальные проекты Čerdyn, Kasapski Nozhove, Gut Splinters и W1NTERH8 со ссылками на YouTube Music. Страница переведена на русский и английский.
-
-#### 0.1.7 — пресеты и очки развития (27 октября 2026)
-
-- Сохранение и загрузка пресетов выполняются только кнопками. Смена тела, загрузка пресета и ремонт киберрук больше не требуют предварительного сохранения текущего пресета.
-- Исправлена ошибка «Unsupported cosmetic value type gameItemID; preset capture cancelled»: вложенный gameItemID в косметических настройках имплантов теперь сохраняется и переносится между сейвами с корректным сопоставлением имён полей.
-- Исправлено добавление очков способностей и атрибутов в новых сейвах до первого повышения уровня или траты очков. Если поле unspent и его имя отсутствуют, редактор создаёт их при изменении; наличие spent не требуется.
-- Добавлен регрессионный тест для отсутствующих полей очков; расширена проверка переноса косметики с gameItemID.
-
-Для версии 0.1.7 обновлены Windows x64 и универсальный macOS-пакет, версии приложений и контрольные суммы. Прошли 28 тестов, проверка форматирования и Clippy. Новые исправления не проверялись в игре; запуск Windows-сборки пока не проверен.
+- Добавлены английские названия предметов с ID в скобках во всех языках интерфейса. Список инвентаря отсортирован по названию, полные сведения доступны при наведении.
+- Добавлен поиск по названию предмета, строковому ID и числовому TDBID.
+- Добавлены категории: огнестрельное и ближнее оружие, модификации и обвесы, боеприпасы, импланты, одежда, расходники, компоненты и чертежи, скрипты, мусор, прочее и неизвестные предметы.
+- Добавлены фильтры «Только культовое» и «Только квестовые», счётчик найденных предметов и кнопка сброса фильтров. Категорию, поиск и оба фильтра можно использовать вместе.
+- Для предметов без распознанного названия сохраняется отображение доступного ID/TDBID.
+- Уровень персонажа, репутацию и навыки теперь можно повышать выше стандартных лимитов. При превышении лимита появляется предупреждение о необходимости соответствующего игрового мода; сам мод устанавливается отдельно.
+- Двойной щелчок по числу позволяет ввести уровень с клавиатуры.
 
 #### 0.1.8 — лицевые киберимпланты и смена тела (28 октября 2026)
 
-- Исправлено исчезновение пункта лицевых киберимплантов у рипера: проблемный женский вариант `cyberware_01` автоматически заменяется на `cyberware_15` с согласованными записями головы и сохранением соответствующего тона кожи.
-- Исправление применяется при экспорте и замене сейва, создании и загрузке пресетов, включая версии 1 и 2. Исправление лицевых имплантов не требует дополнительных действий. Встроенный женский пресет также обновлён.
-- Уже выбранные рабочие варианты сохраняются. Отдельная косметика киберрук, экипировка и игровые характеристики не сбрасываются.
-- Если косметике имплантов не найден проверенный вариант для другого тела, редактор предлагает отменить смену тела или продолжить со сбросом косметики к стандартной. Подтверждение сбрасывает цвета, бренд и косметические настройки, сохраняя установленные импланты, оружие и характеристики. Доступна отмена через Undo. Другие ошибки сейва этим подтверждением не обходятся.
-- Пользователь подтвердил восстановление пункта на диагностической копии и предоставил сейв после выбора нового варианта в игре. Автоматическая миграция воспроизводит проверенный диагностический сейв байт в байт. Прошли 40 тестов, форматирование и Clippy; Windows-сборка не проверялась запуском на Windows.
+- Исправлено исчезновение пункта лицевых киберимплантов у рипера. Исправление применяется автоматически при сохранении и работе с пресетами, в том числе со старыми файлами.
+- Обновлён встроенный женский пресет. Рабочие варианты внешности, тон кожи, косметика киберрук и экипировка сохраняются.
+- Если косметику имплантов нельзя перенести на другое тело, можно отменить смену тела или продолжить со стандартной косметикой. Установленные импланты, оружие и характеристики сохраняются; изменение можно отменить.
+
+#### 0.1.7 — пресеты и очки развития (27 октября 2026)
+
+- Смена тела, загрузка пресета и ремонт киберрук больше не требуют предварительного сохранения текущего пресета. Сохранение и загрузка пресетов доступны через отдельные кнопки.
+- Исправлена ошибка, мешавшая сохранять пресеты с некоторыми косметическими настройками имплантов и переносить их между сейвами.
+- Исправлено добавление очков способностей и атрибутов в новых сохранениях до первого повышения уровня или траты очков.
+
+#### 0.1.6 — страница автора
+
+- Добавлена страница «О нас / About us», доступная без загрузки сохранения: информация о разработчике и ссылки на nozhove.com и GitHub.
+- Добавлены ссылки на музыкальные проекты Čerdyn, Kasapski Nozhove, Gut Splinters и W1NTERH8 в YouTube Music. Страница доступна на русском и английском.
+
+#### 0.1.5 — исправление повторного исчезновения рук
+
+- Исправлено повторное исчезновение мужских киберрук после обновления внешности имплантов в игре.
+- Ремонт киберрук сохраняет выбранные цвета и косметику, лицо, тело, голос и экипировку.
+
+#### 0.1.4 — внешний вид киберрук
+
+- Исправлено отображение Gorilla Arms, Mantis Blades и Monowire; восстановлены элементальные варианты всех четырёх типов киберрук, включая Projectile Launcher.
+- Добавлены подбор мужских и женских вариантов внешности и кнопка «Исправить киберруки» для существующих сохранений.
+- Пресеты теперь сохраняют косметические настройки имплантов и позволяют переносить их между сейвами. Старые пресеты остаются совместимыми; инвентарь, установленные импланты, характеристики и квесты сохраняются.
+
+#### 0.1.3 — пресеты и сохранение файлов
+
+- Добавлены файлы `.ncpreset` для сохранения и переноса тела, голоса и полной внешности персонажа. Перед сменой тела или загрузкой другого пресета предлагается сохранить текущую внешность.
+- Последняя открытая папка сохранения запоминается между запусками.
+- Добавлена возможность заменить текущий сейв с резервной копией в папке `old`. Она выключена по умолчанию и сбрасывается при открытии другого сохранения.
+
+#### 0.1.2 — исходная версия
+
+- Добавлены независимый выбор тела и голоса, русский и английский интерфейс с английским по умолчанию, отмена и повтор изменений, экспорт отдельной копии сохранения.
 
 ### Возможности
 
 | Раздел | Что реализовано |
 | --- | --- |
 | Персонаж | Пять атрибутов, уровень, репутация, пять навыков, очки развития и биочипа |
-| Инвентарь | Контейнеры, деньги, количества существующих стеков, квестовые флаги предметов, поиск |
+| Инвентарь | Контейнеры, деньги, количества существующих стеков, квестовые флаги, английские названия с ID, категории и совместные фильтры |
 | Добавление ресурсов | Деньги, компоненты пяти уровней, четыре вида боеприпасов |
 | Внешность | Мужское/женское тело и голос, расширенный редактор appearance definitions и morph targets |
 | Гараж | Добавление/удаление доступного для вызова транспорта, сохранение неизвестных записей |
 | Квестовые флаги | Поиск, редактирование, добавление по имени, пресеты доступности концовки/романов, JSON-экспорт |
 | Диагностика | Версии, число узлов, размеры, повторная проверка записи |
 
-Словарь содержит 40 548 технических названий предметов. Неизвестные записи
-сохраняются и показываются как `TDBID ...`. Предметы не переименовываются в
-локализованные названия игры. Каталог транспорта взят из CyberCAT; неизвестные
+Словарь содержит 40 548 технических имён записей. Отдельный справочник игры 2.5
+содержит 10 156 записей с типами и 7 283 английскими названиями. Названия предметов
+всегда английские, язык интерфейса переключается независимо. Если название или
+строковый ID не найдены, отображается доступный ID/TDBID. Каталог транспорта взят из CyberCAT; неизвестные
 уже открытые машины также показываются.
 
 Очки развития можно добавлять до первого повышения уровня и траты очков:
@@ -220,6 +224,7 @@ cargo build --release --locked --target x86_64-pc-windows-msvc
 
 - `src/appearance.rs` — тип тела и голоса, базовые пресеты внешности.
 - `src/binary.rs` — чтение VLQ и строк REDengine с проверкой границ.
+- `src/item_catalog.rs` — названия предметов, категории и фильтры; данные в `assets/item_metadata.json`.
 - `src/save.rs` — контейнер VASC, LZ4, узлы, инвентарь, флаги, внешность, гараж, экспорт.
 - `src/package.rs` — RED packages, развитие персонажа, оптимизированные статы 2.5.
 - `src/main.rs` — интерфейс и CLI диагностики.
@@ -245,7 +250,7 @@ Project repository: [desfpc/Cyberpunk25SaveEditor](https://github.com/desfpc/Cyb
 
 ### Getting started
 
-Download version **0.1.8** — no Rust installation or build step required:
+Download version **0.1.9** — no Rust installation or build step required:
 
 | Platform | Download | Contents |
 | --- | --- | --- |
@@ -280,68 +285,72 @@ verification does not replace checking that the edited save loads in the game.
 **About us** opens the author’s projects and music page, including before loading
 a save.
 
-### Changelog: 0.1.2 → 0.1.8
+### Changelog: 0.1.9 → 0.1.2
 
-Changes made on **October 26–28, 2026**. Version 0.1.2 is the comparison baseline.
+#### 0.1.9 — inventory browser and levels for modded games (October 29, 2026)
 
-#### 0.1.2 — baseline
-
-- Independent body and voice controls, Russian/English UI with English selected by default, undo/redo and export to a separate save copy.
-
-#### 0.1.3 — presets and save handling
-
-- Added `.ncpreset` files capturing body, voice and the entire appearance block: resources, morphs, arm groups, camera mappings and tags. Before changing body or loading another preset, the current appearance must be saved; cancelling the dialog cancels the change.
-- The last successfully opened save folder is remembered between launches.
-- Added optional replacement of the current save with a separate backup in `old/backup-…`. The switch is off by default and resets when a save is opened. Output is verified by reading it back; replacement is refused if backup creation fails or the source file has changed on disk.
-
-#### 0.1.4 — cyberarm resource fixes
-
-- Fixed obsolete Gorilla Arms, Mantis Blades and Monowire appearance names; restored 16 elemental groups for all four cyberarm types, including Projectile Launcher.
-- Added verified male/female appearance mapping and a Repair cyberarm appearance button for existing saves.
-- Version 2 presets capture the separate cyberware cosmetic settings (`CyberwareCustomizationSystem`) and support transfer between saves. Version 1 presets remain compatible; presets do not replace inventory, equipped cyberware, stats or quests.
-
-#### 0.1.5 — arms disappearing again after a refresh
-
-- Updated the male layout against a natively male save: 34 arm groups, separate FPP/TPP slots and 5 camera mappings. Repair upgrades legacy combined groups, addressing arms disappearing again after an in-game cyberware appearance refresh.
-- Repair retains selected colors and cosmetics, face, body, voice and equipment. The user confirmed male arms work after refreshing their appearance and a female preset restores both appearance and arms in game.
-
-#### 0.1.6 — author page
-
-- Added an About us button and a separate page available before loading a save, with a short developer biography, nozhove.com and GitHub links.
-- Added YouTube Music links for Čerdyn, Kasapski Nozhove, Gut Splinters and W1NTERH8. The page supports Russian and English.
-
-#### 0.1.7 — presets and development points (October 27, 2026)
-
-- Presets are saved and loaded only through their buttons. Body changes, preset loading and cyberarm repair no longer require saving the current preset first.
-- Fixed “Unsupported cosmetic value type gameItemID; preset capture cancelled”: nested gameItemID values in cyberware cosmetics are now captured and transferred between saves with field names rebound correctly.
-- Fixed adding perk and attribute points to fresh saves before the first level-up or point expenditure. Missing unspent fields and name-pool entries are created when edited; spent is not required.
-- Added a regression test for omitted point fields and extended cosmetic transfer coverage for gameItemID.
-
-Version 0.1.7 updates the Windows x64 and universal macOS packages, application versions and checksums. All 28 tests, formatting checks and Clippy passed. The new fixes have not been verified in game; the Windows build has not yet been run on Windows.
+- Added English item names with IDs in parentheses in both UI languages. Inventory is sorted by name, with full details available on hover.
+- Added search by item name, record ID and numeric TDBID.
+- Added categories for ranged and melee weapons, weapon mods and attachments, ammunition, cyberware, clothing, consumables, components and crafting specs, quickhacks, junk, other and unknown items.
+- Added iconic-only and quest-only filters, a result counter and a reset button. Category, search and both filters can be combined.
+- Items without a recognized name retain their available ID/TDBID.
+- Character level, Street Cred and skills can now exceed standard limits. A warning explains when a game mod is needed to raise the relevant limit; install that mod separately.
+- Double-click a number to enter a level with the keyboard.
 
 #### 0.1.8 — facial cyberware and body changes (October 28, 2026)
 
-- Fixed the missing facial-cyberware option at ripperdocs: the affected female `cyberware_01` selection is automatically replaced with `cyberware_15`, keeping head entries consistent and retaining the corresponding skin tone.
-- Applied during save export/replacement and preset capture/loading, including version 1 and 2 presets. Facial-cyberware repair requires no extra steps. The bundled female preset is updated too.
-- Existing working selections are retained. Separate cyberarm cosmetics, equipment and gameplay stats are preserved.
-- If cyberware cosmetics have no verified counterpart for the other body, a warning offers Cancel or a body change with default cosmetics. Confirmation resets colors, brand and cosmetic settings while retaining installed cyberware, weapons and stats. Undo restores the prior state. This confirmation does not bypass other save errors.
-- The user confirmed the restored control in a diagnostic save and supplied a subsequent in-game save with a new selection. Automatic migration reproduces the game-tested diagnostic save byte for byte. All 40 tests, formatting and Clippy passed; the Windows build has not been run on Windows.
+- Fixed the missing facial-cyberware option at ripperdocs. Repair is automatic when saving or working with presets, including older files.
+- Updated the bundled female preset. Working appearance selections, skin tone, cyberarm cosmetics and equipment are retained.
+- When cyberware cosmetics cannot transfer to another body, you can cancel the body change or continue with default cosmetics. Installed cyberware, weapons and stats are retained; the change can be undone.
+
+#### 0.1.7 — presets and development points (October 27, 2026)
+
+- Body changes, preset loading and cyberarm repair no longer require saving the current preset first. Dedicated buttons save and load presets.
+- Fixed an error that prevented saving presets with certain cyberware cosmetics and transferring them between saves.
+- Fixed adding perk and attribute points to fresh saves before the first level-up or point expenditure.
+
+#### 0.1.6 — author page
+
+- Added an About us page available without loading a save, with developer information and links to nozhove.com and GitHub.
+- Added YouTube Music links for Čerdyn, Kasapski Nozhove, Gut Splinters and W1NTERH8. The page is available in English and Russian.
+
+#### 0.1.5 — arms disappearing again after a refresh
+
+- Fixed male cyberarms disappearing again after refreshing cyberware appearance in game.
+- Cyberarm repair retains selected colors and cosmetics, face, body, voice and equipment.
+
+#### 0.1.4 — cyberarm appearance
+
+- Fixed Gorilla Arms, Mantis Blades and Monowire appearance and restored elemental variants for all four cyberarm types, including Projectile Launcher.
+- Added matching male/female appearance variants and a Repair cyberarm appearance button for existing saves.
+- Presets now capture cyberware cosmetics and support transferring them between saves. Older presets remain compatible; inventory, installed cyberware, stats and quests are retained.
+
+#### 0.1.3 — presets and save handling
+
+- Added `.ncpreset` files to save and transfer body, voice and complete character appearance. Saving the current appearance is offered before changing body or loading another preset.
+- The last opened save folder is remembered between launches.
+- Added optional replacement of the current save with a backup in the `old` folder. The option is off by default and resets when another save is opened.
+
+#### 0.1.2 — initial version
+
+- Added independent body and voice selection, Russian and English UI with English by default, undo/redo and export of a separate save copy.
 
 ### Features
 
 | Section | Implemented functionality |
 | --- | --- |
 | Player | Five attributes, level, Street Cred, five skills, development and Relic points |
-| Inventory | Containers, money, existing stack quantities, item quest flags and search |
+| Inventory | Containers, money, existing stack quantities, quest flags, English names with IDs, categories and combined filters |
 | Add resources | Money, five tiers of crafting components and four ammunition types |
 | Appearance | Male/female body and voice controls, advanced editing of appearance definitions and morph targets |
 | Garage | Add or remove callable vehicles while preserving unknown entries |
 | Quest facts | Search, edit, add by name, ending/romance availability presets and JSON export |
 | Diagnostics | Version information, node counts, sizes and write/read-back verification |
 
-The dictionary contains 40,548 technical item names. Unknown records are preserved
-and displayed as `TDBID ...`. Items are not renamed to the game's localized display
-names. The vehicle catalog comes from CyberCAT; already unlocked vehicles that are
+The record dictionary contains 40,548 technical names. Separate 2.5 metadata covers
+10,156 records with types and 7,283 English item names. Item names stay English
+in both UI languages. Missing names or record strings fall back to the available
+ID/TDBID. The vehicle catalog comes from CyberCAT; already unlocked vehicles that are
 missing from the catalog are also displayed.
 
 Editing a stat synchronizes `PlayerDevelopmentData` and the player's corresponding
@@ -453,6 +462,7 @@ Developed by **Sergei Peshalov** · [GitHub: desfpc](https://github.com/desfpc).
 
 - `src/appearance.rs` — body/voice types and default appearance presets.
 - `src/binary.rs` — bounds-checked REDengine VLQ and string reading.
+- `src/item_catalog.rs` — item names, categories and filters; data in `assets/item_metadata.json`.
 - `src/save.rs` — VASC container, LZ4, nodes, inventory, facts, appearance, garage and export.
 - `src/package.rs` — RED packages, player development and optimized 2.5 stats.
 - `src/main.rs` — interface and diagnostic CLI.

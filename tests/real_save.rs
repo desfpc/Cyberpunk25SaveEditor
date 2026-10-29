@@ -99,6 +99,41 @@ fn read_and_patch_player() {
     }
 }
 #[test]
+fn modded_progression_roundtrips_and_preserves_limits() {
+    let original = sample();
+    for stat in original
+        .player_stats()
+        .unwrap()
+        .into_iter()
+        .filter(|s| s.group == "Progression")
+    {
+        for value in [1, stat.max, stat.max + 1, 250, 1000, i32::MAX as u32] {
+            let mut edited = original.clone();
+            edited
+                .set_player_stat(&stat.group, &stat.key, value)
+                .unwrap();
+            let reopened = Save::parse(edited.encode().unwrap()).unwrap();
+            let actual = reopened
+                .player_stats()
+                .unwrap()
+                .into_iter()
+                .find(|s| s.key == stat.key)
+                .unwrap();
+            assert_eq!(actual.value, value);
+            assert_eq!(actual.max, stat.max);
+            assert_eq!(actual.exceeds_game_limit(), value > stat.max);
+        }
+        for value in [0, i32::MAX as u32 + 1, u32::MAX] {
+            let mut edited = original.clone();
+            assert!(edited
+                .set_player_stat(&stat.group, &stat.key, value)
+                .is_err());
+            assert_eq!(edited.data, original.data);
+            assert_eq!(edited.metadata, original.metadata);
+        }
+    }
+}
+#[test]
 fn appearance_and_garage() {
     let mut s = sample();
     let a = s.appearances().unwrap();
@@ -196,7 +231,7 @@ fn export_is_a_complete_copy_and_refuses_overwrite() {
     let destination = parent.join("ManualSave-900");
     let mut s = sample();
     let original = fs::read("saveExample/sav.dat").unwrap();
-    s.set_player_stat("Progression", "Level", 40).unwrap();
+    s.set_player_stat("Progression", "Level", 100).unwrap();
     s.set_fact(fact_hash("nightcity_test_export"), 7).unwrap();
     s.export(&destination).unwrap();
     let reopened = Save::load(&destination).unwrap();
@@ -207,7 +242,7 @@ fn export_is_a_complete_copy_and_refuses_overwrite() {
     );
     assert_eq!(
         reopened.metadata.as_ref().unwrap()["Data"]["metadata"]["level"],
-        40
+        100
     );
     assert_eq!(
         reopened
@@ -217,7 +252,7 @@ fn export_is_a_complete_copy_and_refuses_overwrite() {
             .find(|s| s.key == "Level")
             .unwrap()
             .value,
-        40
+        100
     );
     assert!(s.export(&destination).is_err());
     assert!(fs::read("saveExample/sav.dat").unwrap() == original);

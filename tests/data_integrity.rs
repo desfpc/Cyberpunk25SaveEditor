@@ -84,7 +84,9 @@ fn player_edits_preserve_all_nonplayer_stats_and_inventory() {
         .data;
     for stat in original.player_stats().unwrap() {
         let mut edited = original.clone();
-        let value = if stat.value < stat.max {
+        let value = if stat.group == "Progression" {
+            stat.max + 40
+        } else if stat.value < stat.max {
             stat.value + 1
         } else {
             stat.value - 1

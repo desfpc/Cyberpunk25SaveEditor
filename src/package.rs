@@ -367,6 +367,21 @@ pub struct PlayerStat {
     pub value: u32,
     pub max: u32,
 }
+impl PlayerStat {
+    /// Progression can exceed the standard game limit when using leveling mods.
+    /// The serialized currentLevel field is a signed Int32.
+    pub fn edit_max(&self) -> u32 {
+        if self.group == "Progression" {
+            i32::MAX as u32
+        } else {
+            self.max
+        }
+    }
+
+    pub fn exceeds_game_limit(&self) -> bool {
+        self.group == "Progression" && self.value > self.max
+    }
+}
 impl Save {
     pub fn player_stats(&self) -> Result<Vec<PlayerStat>> {
         let p = Package::from_save(self, "ScriptableSystemsContainer")?;
@@ -451,7 +466,7 @@ impl Save {
             .find(|s| s.group == group && s.key == key)
             .context("Unknown player stat")?;
         ensure!(
-            value <= stat.max
+            value <= stat.edit_max()
                 && (group == "Points" || value >= if group == "Attributes" { 3 } else { 1 }),
             "Value out of range"
         );

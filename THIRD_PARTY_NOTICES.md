@@ -13,6 +13,16 @@ investigated against the supplied macOS save.
   Only the record-name catalog is shipped; no Oodle/kraken library is required at runtime.
   The extraction script accepts an already decompressed table.
 
+assets/item_metadata.json is a generated dictionary of item identifiers, English
+item titles, item types, categories and iconic/recipe flags read from a locally
+installed Cyberpunk 2077 2.5 copy (base game and Phantom Liberty). It contains no
+archives, scripts, descriptions, textures or decompression library. Records whose
+displayName contains an entire message are exported without that text. Missing
+record strings are represented by their numeric TweakDBID. The reproducible
+extractor is scripts/extract_item_metadata.py; it accepts tweakdb.bin files and
+already decompressed English onscreens CR2W resources. Resource aliases for the
+editor's existing ammunition stack IDs are supplied separately by the UI catalog.
+
 The fact and vehicle dictionaries and default appearance presets are from CyberCAT-SimpleGUI (MIT):
 
 - https://github.com/Deweh/CyberCAT-SimpleGUI

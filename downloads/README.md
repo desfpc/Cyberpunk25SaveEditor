@@ -1,4 +1,4 @@
-# Night City Save Editor 0.1.8
+# Night City Save Editor 0.1.9
 
 ## Русский
 
@@ -12,13 +12,14 @@
 сбрасывает внешность к базовому пресету выбранного типа и поддерживает отмену. Поддерживается Cyberpunk 2077 2.5.
 Добавлены полные пресеты персонажа `.ncpreset`, запоминание последней папки и
 замена сейва с резервной копией в `old` (по умолчанию выключена).
-В 0.1.5 исправлены мужские FPP/TPP-группы и маршруты камер киберрук: ремонт
-обновляет старую структуру для повторного обновления внешности в игре. Пресеты теперь включают отдельные косметические настройки имплантов.
-В 0.1.6 добавлена страница «О нас»: проекты, GitHub и музыка автора.
-В 0.1.7 убраны обязательные диалоги сохранения пресета, исправлены захват косметики
-с gameItemID и добавление очков развития в новые сейвы без поля unspent.
-В 0.1.8 автоматически исправляется исчезнувший пункт лицевых киберимплантов при экспорте и работе с пресетами, включая старые файлы. Дополнительных действий не требуется.
-Если косметику имплантов нельзя перенести на другое тело, редактор предлагает отмену или смену тела со сбросом косметики; экипировка сохраняется, доступен Undo.
+Последние изменения (от новых версий к старым):
+
+- **0.1.9:** английские названия предметов с ID, поиск по названию/ID, категории и совместные фильтры культовых и квестовых предметов. Уровни персонажа, репутации и навыков можно повышать выше стандартных лимитов с соответствующим игровым модом; доступен ввод с клавиатуры двойным щелчком.
+- **0.1.8:** автоматически исправляется исчезнувший пункт лицевых киберимплантов. Если косметику нельзя перенести на другое тело, можно отменить смену тела или продолжить со стандартной косметикой, сохранив экипировку.
+- **0.1.7:** убраны обязательные диалоги сохранения пресета; исправлены сохранение косметики имплантов в пресетах и добавление очков развития в новых сейвах.
+- **0.1.6:** добавлена страница «О нас» со ссылками на проекты, GitHub и музыку автора.
+- **0.1.5:** исправлено повторное исчезновение мужских киберрук после обновления внешности имплантов в игре.
+
 Контрольные суммы SHA-256 находятся в [SHA256SUMS.txt](SHA256SUMS.txt).
 
 Пакеты не подписаны сертификатами Apple/Microsoft и не нотарифицированы.
@@ -37,14 +38,14 @@ Appearance includes independent body and voice controls. Changing body type rese
 appearance to its default preset and can be undone. Cyberpunk 2077 2.5 is supported.
 Includes complete `.ncpreset` character presets, the remembered last save folder,
 and optional save replacement with backups in `old` (off by default).
-0.1.5 repairs male cyberarm FPP/TPP groups, slot names and camera routes, including
-legacy saves whose arms disappeared again after an in-game appearance refresh.
-Presets now include the separate cyberware cosmetic settings.
-0.1.6 adds an About us page with the author’s projects, GitHub profile and music.
-0.1.7 removes mandatory preset save dialogs and fixes gameItemID cosmetic capture
-and adding development points to fresh saves without an unspent field.
-0.1.8 automatically repairs the missing facial-cyberware control on export and during preset capture/loading, including older presets. No extra steps are required.
-If cyberware cosmetics cannot transfer to the other body, a warning offers cancellation or a body change with default cosmetics. Equipment is retained and Undo is available.
+Recent changes (newest first):
+
+- **0.1.9:** English item names with IDs, name/ID search, categories and combined iconic/quest filters. Character level, Street Cred and skills can exceed standard limits with a suitable game mod; double-click a number to enter a level with the keyboard.
+- **0.1.8:** automatic repair of the missing facial-cyberware option. If cosmetics cannot transfer to another body, you can cancel or continue with default cosmetics while retaining equipment.
+- **0.1.7:** removed mandatory preset save dialogs; fixed cyberware cosmetic capture in presets and adding development points to fresh saves.
+- **0.1.6:** added an About us page with links to the author’s projects, GitHub and music.
+- **0.1.5:** fixed male cyberarms disappearing again after refreshing cyberware appearance in game.
+
 SHA-256 checksums are provided in [SHA256SUMS.txt](SHA256SUMS.txt).
 
 Packages are not signed with Apple/Microsoft developer certificates or notarized.
